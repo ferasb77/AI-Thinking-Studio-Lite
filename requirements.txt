@@ -1,0 +1,9 @@
+streamlit
+anthropic
+supabase
+python-dotenv
+reportlab
+
+# Optional: uncomment to use alternative AI providers
+# google-genai
+# openai
