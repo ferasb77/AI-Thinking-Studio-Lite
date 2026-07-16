@@ -555,7 +555,7 @@ def generate_pdf(session_data: dict) -> bytes:
     doc = SimpleDocTemplate(
         buffer, pagesize=A4,
         leftMargin=18 * mm, rightMargin=18 * mm,
-        topMargin=20 * mm, bottomMargin=24 * mm,
+        topMargin=24 * mm, bottomMargin=24 * mm,
         title="AI Thinking Studio™ Lite — Thinking Expedition Summary",
         author=PRODUCT_NAME,
     )
@@ -675,15 +675,26 @@ def generate_pdf(session_data: dict) -> bytes:
     ]
 
     page_counter = [3]
+    # Track actual page counts more carefully:
+    # First page of each room gets the header band.
+    # Continuation pages of the same room should use _interior_canvas.
+    # We assign the room callback only to the FIRST page of each room section,
+    # then use _interior_canvas for subsequent pages.
+    # Since we can't know exact page counts before build, we assign a range of 1
+    # for the header page and rely on the fallback _interior_canvas for the rest.
+    # The dispatch function handles unregistered pages via the else branch.
 
     for key, room_name, room_desc in rooms:
         content = session_data.get(key, "")
         room_cb = _room_canvas(room_name, room_desc)
-        for p in range(page_counter[0], page_counter[0] + 8):
-            page_callbacks[p] = room_cb
+        # Only assign the room band callback to the FIRST page of this room.
+        # All subsequent pages fall through to _interior_canvas in dispatch.
+        page_callbacks[page_counter[0]] = room_cb
+        # Advance counter conservatively — rooms rarely exceed 8 pages
         page_counter[0] += 8
 
-        story.append(Spacer(1, 30 * mm))  # space below header band
+        # Top margin must clear the 28mm header band plus breathing room
+        story.append(Spacer(1, 34 * mm))
 
         # Participant risk block (Battlefield only)
         if key == "battlefield_output":
