@@ -20,9 +20,7 @@ from core.auth import (  # noqa: E402
 from core.state import (  # noqa: E402
     STEPS, STEP_ICONS, STEP_LABELS,
     init_state, navigate_to, get_expedition_data,
-    is_setup_complete, get_completion_status,
-    load_expedition_into_state, clear_expedition_state,
-    get_current_expedition_state,
+    is_setup_complete, load_expedition_into_state, clear_expedition_state,
 )
 from core.db import (  # noqa: E402
     get_user_expeditions, create_expedition, delete_expedition,
@@ -204,8 +202,6 @@ def render_sidebar():
             </div>
             <hr style="border: none; border-top: 1px solid #1A2E45; margin: 8px 12px;">
         """, unsafe_allow_html=True)
-
-        current = st.session_state.current_step
 
         for step in STEPS:
             label = STEP_LABELS[step]
@@ -473,7 +469,8 @@ def page_mirror_room():
     if not is_setup_complete():
         st.info("Complete the Expedition Setup first to use this room.")
         if st.button("Go to Expedition Setup"):
-            navigate_to("expedition_setup"); st.rerun()
+            navigate_to("expedition_setup")
+            st.rerun()
         return
 
     setup = st.session_state.expedition_setup
@@ -509,7 +506,8 @@ def page_mirror_room():
         col1, col2 = st.columns([3, 1])
         with col2:
             if st.button("Next: Human Room →"):
-                navigate_to("human_room"); st.rerun()
+                navigate_to("human_room")
+                st.rerun()
 
 
 def page_human_room():
@@ -518,7 +516,8 @@ def page_human_room():
         "The Human Room helps you see them more clearly before you engage them.")
 
     if not is_setup_complete():
-        st.info("Complete the Expedition Setup first."); return
+        st.info("Complete the Expedition Setup first.")
+        return
 
     custom = st.text_input(
         "Add a specific stakeholder or group to include (optional)",
@@ -538,7 +537,8 @@ def page_human_room():
         col1, col2 = st.columns([3, 1])
         with col2:
             if st.button("Next: Possibility Room →"):
-                navigate_to("possibility_room"); st.rerun()
+                navigate_to("possibility_room")
+                st.rerun()
 
 
 def page_possibility_room():
@@ -548,7 +548,8 @@ def page_possibility_room():
         "You will select ideas to carry forward.")
 
     if not is_setup_complete():
-        st.info("Complete the Expedition Setup first."); return
+        st.info("Complete the Expedition Setup first.")
+        return
 
     expedition_data = get_expedition_data()
     has_output = run_ai_room(
@@ -583,7 +584,8 @@ def page_possibility_room():
         col1, col2 = st.columns([3, 1])
         with col2:
             if st.button("Next: Battlefield Room →"):
-                navigate_to("battlefield_room"); st.rerun()
+                navigate_to("battlefield_room")
+                st.rerun()
 
 
 def page_battlefield_room():
@@ -592,13 +594,15 @@ def page_battlefield_room():
         "The Battlefield Room stress-tests your selected approaches with firm, constructive skepticism.")
 
     if not is_setup_complete():
-        st.info("Complete the Expedition Setup first."); return
+        st.info("Complete the Expedition Setup first.")
+        return
 
     selected = st.session_state.get("selected_ideas", [])
     if not selected:
         st.info("No ideas selected yet. Return to the Possibility Room to select ideas.")
         if st.button("Go to Possibility Room"):
-            navigate_to("possibility_room"); st.rerun()
+            navigate_to("possibility_room")
+            st.rerun()
         return
 
     st.markdown("""<div style='font-size:0.78rem;color:#5A7A99;text-transform:uppercase;
@@ -653,7 +657,8 @@ def page_battlefield_room():
         col1, col2 = st.columns([3, 1])
         with col2:
             if st.button("Next: Future Room →"):
-                navigate_to("future_room"); st.rerun()
+                navigate_to("future_room")
+                st.rerun()
 
 
 def page_future_room():
@@ -663,7 +668,8 @@ def page_future_room():
         "This room does not tell you to proceed or stop. It tells you what to be ready for.")
 
     if not is_setup_complete():
-        st.info("Complete the Expedition Setup first."); return
+        st.info("Complete the Expedition Setup first.")
+        return
 
     expedition_data = get_expedition_data()
     has_output = run_ai_room(
@@ -674,7 +680,8 @@ def page_future_room():
         col1, col2 = st.columns([3, 1])
         with col2:
             if st.button("Go to Summary →"):
-                navigate_to("summary_export"); st.rerun()
+                navigate_to("summary_export")
+                st.rerun()
 
 
 def page_summary_export():
