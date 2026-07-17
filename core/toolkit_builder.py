@@ -60,22 +60,34 @@ def _section_canvas(section_accent_hex: str):
         # Left bar in section accent colour
         canvas.setFillColor(accent)
         canvas.rect(0, 0, 3 * mm, H, fill=1, stroke=0)
-        # Footer rule
+        
+        # Footer rule line
         canvas.setStrokeColor(colors.HexColor("#D0D8E0"))
         canvas.setLineWidth(0.3)
         canvas.line(15 * mm, 18 * mm, W - 15 * mm, 18 * mm)
         
-        # ── Fixed Footer Layout (Two Lines) ──────────────────────────────────
-        # Line 1: Meta info right under the rule line
+        # ── LINE 1: Meta Information (Pushed up safely) ───────────────────
         canvas.setFont("Helvetica", 6.5)
         canvas.setFillColor(accent)
-        canvas.drawString(15 * mm, 14 * mm, PRODUCT_NAME)
-        canvas.drawRightString(W - 15 * mm, 14 * mm, DOC_TITLE)
+        canvas.drawString(15 * mm, 13.5 * mm, PRODUCT_NAME)
+        canvas.drawRightString(W - 15 * mm, 13.5 * mm, DOC_TITLE)
         
-        # Line 2: Centered long philosophy text safely below
-        canvas.setFont("Helvetica-Oblique", 6)
-        canvas.setFillColor(GRAY_500)
-        canvas.drawCentredString(W / 2, 9 * mm, FOOTER_TEXT)
+        # ── LINE 2: Wrapped Philosophy Text (Moved lower, prevents overlap) ─
+        footer_style = ParagraphStyle(
+            "FooterText",
+            fontName="Helvetica-Oblique",
+            fontSize=6,
+            leading=8,
+            textColor=GRAY_500,
+            alignment=1 # Center aligned
+        )
+        p = Paragraph(FOOTER_TEXT, footer_style)
+        # Wrap the paragraph to the width of the printable page
+        avail_width = W - 30 * mm
+        p.wrap(avail_width, 20)
+        # Draw it safely lower down at 7mm from the bottom edge
+        p.drawOn(canvas, 15 * mm, 7 * mm)
+        
         canvas.restoreState()
 
     return callback
@@ -85,21 +97,32 @@ def _intro_canvas(canvas, doc):
     canvas.saveState()
     canvas.setFillColor(ACCENT)
     canvas.rect(0, 0, 3 * mm, H, fill=1, stroke=0)
+    
+    # Footer rule line
     canvas.setStrokeColor(GRAY_200)
     canvas.setLineWidth(0.3)
     canvas.line(15 * mm, 18 * mm, W - 15 * mm, 18 * mm)
     
-    # ── Fixed Footer Layout (Two Lines) ──────────────────────────────────
-    # Line 1: Meta info right under the rule line
+    # ── LINE 1: Meta Information ───────────────────────────────────────
     canvas.setFont("Helvetica", 6.5)
     canvas.setFillColor(ACCENT)
-    canvas.drawString(15 * mm, 14 * mm, PRODUCT_NAME)
-    canvas.drawRightString(W - 15 * mm, 14 * mm, DOC_TITLE)
+    canvas.drawString(15 * mm, 13.5 * mm, PRODUCT_NAME)
+    canvas.drawRightString(W - 15 * mm, 13.5 * mm, DOC_TITLE)
     
-    # Line 2: Centered long philosophy text safely below
-    canvas.setFont("Helvetica-Oblique", 6)
-    canvas.setFillColor(GRAY_500)
-    canvas.drawCentredString(W / 2, 9 * mm, FOOTER_TEXT)
+    # ── LINE 2: Wrapped Philosophy Text ────────────────────────────────
+    footer_style = ParagraphStyle(
+        "IntroFooterText",
+        fontName="Helvetica-Oblique",
+        fontSize=6,
+        leading=8,
+        textColor=GRAY_500,
+        alignment=1
+    )
+    p = Paragraph(FOOTER_TEXT, footer_style)
+    avail_width = W - 30 * mm
+    p.wrap(avail_width, 20)
+    p.drawOn(canvas, 15 * mm, 7 * mm)
+    
     canvas.restoreState()
 
 

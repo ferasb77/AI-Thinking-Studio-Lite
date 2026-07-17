@@ -9,7 +9,7 @@ import re
 from datetime import datetime
 
 from reportlab.lib import colors
-from reportlab.lib.enums import TA_CENTER, TA_LEFT
+from reportlab.lib.enums import TA_CENTER
 from reportlab.lib.pagesizes import A4
 from reportlab.lib.styles import ParagraphStyle
 from reportlab.lib.units import mm
@@ -447,11 +447,11 @@ def _thinking_journey_page(session_data: dict, styles: dict) -> list:
     def node(label: str, content: str, label_color=GRAY_500,
              text_color=GRAY_800, bg=None):
         lp = ParagraphStyle(
-            f"nl", fontName="Helvetica-Bold", fontSize=7, leading=10,
+            "nl", fontName="Helvetica-Bold", fontSize=7, leading=10,
             textColor=label_color, spaceAfter=3,
         )
         tp = ParagraphStyle(
-            f"nt", fontName="Helvetica", fontSize=10, leading=15,
+            "nt", fontName="Helvetica", fontSize=10, leading=15,
             textColor=text_color, spaceAfter=0,
         )
         bg_color = bg or colors.HexColor("#F7F9FB")
