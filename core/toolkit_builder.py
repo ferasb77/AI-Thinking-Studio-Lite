@@ -64,14 +64,18 @@ def _section_canvas(section_accent_hex: str):
         canvas.setStrokeColor(colors.HexColor("#D0D8E0"))
         canvas.setLineWidth(0.3)
         canvas.line(15 * mm, 18 * mm, W - 15 * mm, 18 * mm)
-        # Footer text
-        canvas.setFont("Helvetica-Oblique", 6)
-        canvas.setFillColor(GRAY_500)
-        canvas.drawCentredString(W / 2, 13 * mm, FOOTER_TEXT)
+        
+        # ── Fixed Footer Layout (Two Lines) ──────────────────────────────────
+        # Line 1: Meta info right under the rule line
         canvas.setFont("Helvetica", 6.5)
         canvas.setFillColor(accent)
-        canvas.drawString(15 * mm, 13 * mm, PRODUCT_NAME)
-        canvas.drawRightString(W - 15 * mm, 13 * mm, DOC_TITLE)
+        canvas.drawString(15 * mm, 14 * mm, PRODUCT_NAME)
+        canvas.drawRightString(W - 15 * mm, 14 * mm, DOC_TITLE)
+        
+        # Line 2: Centered long philosophy text safely below
+        canvas.setFont("Helvetica-Oblique", 6)
+        canvas.setFillColor(GRAY_500)
+        canvas.drawCentredString(W / 2, 9 * mm, FOOTER_TEXT)
         canvas.restoreState()
 
     return callback
@@ -84,13 +88,18 @@ def _intro_canvas(canvas, doc):
     canvas.setStrokeColor(GRAY_200)
     canvas.setLineWidth(0.3)
     canvas.line(15 * mm, 18 * mm, W - 15 * mm, 18 * mm)
-    canvas.setFont("Helvetica-Oblique", 6)
-    canvas.setFillColor(GRAY_500)
-    canvas.drawCentredString(W / 2, 13 * mm, FOOTER_TEXT)
+    
+    # ── Fixed Footer Layout (Two Lines) ──────────────────────────────────
+    # Line 1: Meta info right under the rule line
     canvas.setFont("Helvetica", 6.5)
     canvas.setFillColor(ACCENT)
-    canvas.drawString(15 * mm, 13 * mm, PRODUCT_NAME)
-    canvas.drawRightString(W - 15 * mm, 13 * mm, DOC_TITLE)
+    canvas.drawString(15 * mm, 14 * mm, PRODUCT_NAME)
+    canvas.drawRightString(W - 15 * mm, 14 * mm, DOC_TITLE)
+    
+    # Line 2: Centered long philosophy text safely below
+    canvas.setFont("Helvetica-Oblique", 6)
+    canvas.setFillColor(GRAY_500)
+    canvas.drawCentredString(W / 2, 9 * mm, FOOTER_TEXT)
     canvas.restoreState()
 
 
