@@ -20,9 +20,7 @@ from core.auth import (  # noqa: E402
 from core.state import (  # noqa: E402
     STEPS, STEP_ICONS, STEP_LABELS,
     init_state, navigate_to, get_expedition_data,
-    is_setup_complete, get_completion_status,
-    load_expedition_into_state, clear_expedition_state,
-    get_current_expedition_state,
+    is_setup_complete, load_expedition_into_state, clear_expedition_state,
 )
 from core.db import (  # noqa: E402
     get_user_expeditions, create_expedition, delete_expedition,
