@@ -28,7 +28,7 @@ STEP_LABELS = {
     "possibility_room": "Possibility Room",
     "battlefield_room": "Battlefield Room",
     "future_room":      "Future Room",
-    "summary_export":   "Summary & Export",
+    "summary_export":   "Expedition Record",
 }
 
 STEP_ICONS = {

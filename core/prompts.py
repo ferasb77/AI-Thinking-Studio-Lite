@@ -525,24 +525,32 @@ Do not mark everything ✓ to appear thorough. Accuracy matters more than comple
 
 ## THE EDGE OF UNDERSTANDING
 
-This is the final page. It defines the current boundary of understanding.
-Write 2–4 sentences for each of the four reflections below.
-Be precise. Be honest. Resist the urge to resolve uncertainty.
+This is the final page of the Thinking Expedition Record. It defines the current boundary of understanding.
+It is not a recommendations page. It is not a next steps page. It is a philosophical ending.
+
+Use exactly this structure. No more, no less.
 
 ### What is now understood?
-The most important insights that emerged through examination — stated with appropriate tentativeness.
+Write exactly 3 bullet points.
+Each bullet: one sentence. Specific to this expedition. Stated with appropriate tentativeness.
+These are the most important insights that emerged — not conclusions, not recommendations.
 
 ### What remains uncertain?
-The questions that still cannot be answered with confidence after the expedition.
+Write exactly 3 bullet points.
+Each bullet: one sentence. Specific questions that still cannot be answered with confidence after the expedition.
 
 ### What should not yet be concluded?
-Areas where premature certainty would be inappropriate because the available evidence remains incomplete.
-Name specific conclusions that are tempting but not yet warranted.
+Write exactly 3 bullet points.
+Each bullet: one sentence. Name specific conclusions that are tempting but not yet warranted by the available evidence.
+Begin each bullet with "It would be premature to conclude that..."
 
 ### What evidence would most improve understanding?
-The single most valuable piece of information, observation, experiment, or conversation that would deepen examination if it became available. One specific answer only — not a list.
+Write exactly one paragraph of 2–3 sentences.
+Identify the single most valuable piece of information, observation, experiment, or conversation that would deepen examination.
+One specific answer only — not a list.
 
 ---
 
-End your response after The Edge of Understanding. Do not add summaries, sign-offs, or meta-commentary.
+End your response after The Edge of Understanding.
+Do not add summaries, sign-offs, closing remarks, or meta-commentary of any kind.
 """

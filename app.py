@@ -20,7 +20,9 @@ from core.auth import (  # noqa: E402
 from core.state import (  # noqa: E402
     STEPS, STEP_ICONS, STEP_LABELS,
     init_state, navigate_to, get_expedition_data,
-    is_setup_complete, load_expedition_into_state, clear_expedition_state,
+    is_setup_complete, get_completion_status,
+    load_expedition_into_state, clear_expedition_state,
+    get_current_expedition_state,
 )
 from core.db import (  # noqa: E402
     get_user_expeditions, create_expedition, delete_expedition,
@@ -680,15 +682,15 @@ def page_future_room():
     if has_output:
         col1, col2 = st.columns([3, 1])
         with col2:
-            if st.button("Go to Summary →"):
+            if st.button("Go to Expedition Record →"):
                 navigate_to("summary_export")
                 st.rerun()
 
 
 def page_summary_export():
-    room_header("■", "Expedition Summary", "Review & Export",
+    room_header("■", "Expedition Record", "Review & Export",
         "Your complete Thinking Expedition — from original framing to future implications — "
-        "captured in one place. Review what you've examined. Add your final reflection. Download your summary.")
+        "documented in one place. Review what you've examined. Add your final reflection. Download your record.")
 
     setup = st.session_state.expedition_setup
 
@@ -859,9 +861,9 @@ def page_summary_export():
                 .lower().replace(" ", "-")
             )
             st.download_button(
-                label="⬇  Download Expedition Summary (PDF)",
+                label="⬇  Download Thinking Expedition Record (PDF)",
                 data=st.session_state["_pdf_bytes"],
-                file_name=f"thinking-expedition-{title_slug}-{datetime.now().strftime('%Y%m%d')}.pdf",
+                file_name=f"thinking-expedition-record-{title_slug}-{datetime.now().strftime('%Y%m%d')}.pdf",
                 mime="application/pdf",
             )
 

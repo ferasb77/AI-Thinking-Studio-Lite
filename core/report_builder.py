@@ -9,7 +9,7 @@ import re
 from datetime import datetime
 
 from reportlab.lib import colors
-from reportlab.lib.enums import TA_CENTER
+from reportlab.lib.enums import TA_CENTER, TA_LEFT
 from reportlab.lib.pagesizes import A4
 from reportlab.lib.styles import ParagraphStyle
 from reportlab.lib.units import mm
@@ -443,11 +443,11 @@ def _thinking_journey_page(session_data: dict, styles: dict) -> list:
     def node(label: str, content: str, label_color=GRAY_500,
              text_color=GRAY_800, bg=None):
         lp = ParagraphStyle(
-            "nl", fontName="Helvetica-Bold", fontSize=7, leading=10,
+            f"nl", fontName="Helvetica-Bold", fontSize=7, leading=10,
             textColor=label_color, spaceAfter=3,
         )
         tp = ParagraphStyle(
-            "nt", fontName="Helvetica", fontSize=10, leading=15,
+            f"nt", fontName="Helvetica", fontSize=10, leading=15,
             textColor=text_color, spaceAfter=0,
         )
         bg_color = bg or colors.HexColor("#F7F9FB")
@@ -771,7 +771,7 @@ def _render_edge_of_understanding(text: str, styles: dict) -> list:
     story = []
     story.extend(_synthesis_page_title(
         "The Edge of Understanding",
-        "Not a recommendation page. A definition of where understanding currently ends.",
+        "Not a recommendations page. The final boundary of what this expedition made visible.",
         styles, colors.HexColor("#8B6DB5"),
     ))
 
@@ -841,7 +841,7 @@ def generate_pdf(session_data: dict, synthesis_text: str = "") -> bytes:
         buffer, pagesize=A4,
         leftMargin=18 * mm, rightMargin=18 * mm,
         topMargin=24 * mm, bottomMargin=24 * mm,
-        title="AI Thinking Studio™ Lite — Thinking Expedition Summary",
+        title="AI Thinking Studio™ Lite — Thinking Expedition Record",
         author=PRODUCT_NAME,
     )
 
@@ -891,6 +891,12 @@ def generate_pdf(session_data: dict, synthesis_text: str = "") -> bytes:
         ("BOTTOMPADDING", (0, 0), (-1, -1), 8),
     ]))
     story.append(gr_wrap)
+
+    record_p = ParagraphStyle(
+        "cov_record", fontName="Helvetica", fontSize=11, leading=16,
+        textColor=GOLD, alignment=TA_CENTER, spaceAfter=6,
+    )
+    story.append(Paragraph("Record", record_p))
 
     challenge_title = setup.get("challenge_title", "Untitled Expedition")
     story.append(Paragraph(challenge_title, cover_sub_p))
