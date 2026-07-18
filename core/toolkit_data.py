@@ -10,9 +10,9 @@ TOOLKIT_SECTIONS = [
         "title": "Mirror Prompts",
         "objective": "Examine the Problem",
         "purpose": "Challenge the way the problem is currently understood before any solution is considered.",
-        "room_color": "#0F1B2D",
-        "accent": "#5B82B5",
-        "accent_light": "#A8C4E0",
+        "room_color": "#111118",
+        "accent": "#7A6038",
+        "accent_light": "#D7BB83",
         "cards": [
             {
                 "number": "01",
@@ -61,9 +61,9 @@ TOOLKIT_SECTIONS = [
         "title": "Human Prompts",
         "objective": "Examine the People",
         "purpose": "Explore the perspectives, motivations, and resistances of everyone affected by the challenge.",
-        "room_color": "#0D1F1A",
-        "accent": "#3A9E7A",
-        "accent_light": "#7ECFB0",
+        "room_color": "#111118",
+        "accent": "#7A6038",
+        "accent_light": "#D7BB83",
         "cards": [
             {
                 "number": "06",
@@ -112,9 +112,9 @@ TOOLKIT_SECTIONS = [
         "title": "Possibility Prompts",
         "objective": "Expand the Search Space",
         "purpose": "Widen the range of approaches under examination before any narrowing or decision-making begins.",
-        "room_color": "#1A1408",
-        "accent": "#C9A84C",
-        "accent_light": "#E8D08A",
+        "room_color": "#111118",
+        "accent": "#C9A96E",
+        "accent_light": "#D7BB83",
         "cards": [
             {
                 "number": "11",
@@ -160,12 +160,12 @@ TOOLKIT_SECTIONS = [
     },
     {
         "id": "battlefield",
-        "title": "Battlefield Prompts",
+        "title": "Challenge Prompts",
         "objective": "Stress-Test Thinking",
         "purpose": "Challenge selected ideas with firm, constructive scrutiny before any commitment is made.",
-        "room_color": "#1F0D0D",
-        "accent": "#C05050",
-        "accent_light": "#E8A0A0",
+        "room_color": "#111118",
+        "accent": "#7A6038",
+        "accent_light": "#D7BB83",
         "cards": [
             {
                 "number": "16",
@@ -214,9 +214,9 @@ TOOLKIT_SECTIONS = [
         "title": "Future Prompts",
         "objective": "Examine Consequences",
         "purpose": "Map what happens next — including the outcomes that are unlikely to appear in any plan.",
-        "room_color": "#12101F",
-        "accent": "#6B5DB5",
-        "accent_light": "#B0A8E0",
+        "room_color": "#111118",
+        "accent": "#7A6038",
+        "accent_light": "#D7BB83",
         "cards": [
             {
                 "number": "21",
@@ -265,9 +265,9 @@ TOOLKIT_SECTIONS = [
         "title": "Studio Prompts",
         "objective": "The Doctrine in Practice",
         "purpose": "These prompts belong to no single room. They exist to protect the quality of examination itself.",
-        "room_color": "#0D1117",
-        "accent": "#C9A84C",
-        "accent_light": "#E8D08A",
+        "room_color": "#0A0A0F",
+        "accent": "#C9A96E",
+        "accent_light": "#D7BB83",
         "cards": [
             {
                 "number": "S1",

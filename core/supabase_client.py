@@ -1,6 +1,6 @@
 """
 core/supabase_client.py
-Supabase connection singleton for AI Thinking Studio™ Lite.
+Supabase connection singleton for AI Thinking Studio™.
 
 Returns a single shared client instance.
 Auth state is managed via the client's session methods.

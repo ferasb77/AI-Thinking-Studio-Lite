@@ -1,6 +1,6 @@
 """
 core/auth.py
-Authentication UI components for AI Thinking Studio™ Lite.
+Authentication UI components for AI Thinking Studio™.
 
 Renders login/register forms and handles session management.
 All auth state is stored in st.session_state under 'auth_user'
@@ -8,6 +8,7 @@ and 'auth_expedition_id'.
 """
 
 import streamlit as st
+from core.brand import BRAND_LINE, auth_brand_html
 from core.db import sign_in, sign_out, get_current_user
 
 
@@ -47,23 +48,7 @@ def render_auth_page():
     Render the full authentication page (login or register).
     Called when the user is not authenticated.
     """
-    st.markdown(
-        """
-        <div style="max-width: 480px; margin: 40px auto;">
-            <div style="text-align: center; margin-bottom: 32px;">
-                <div style="font-family: serif; font-size: 1.8rem; color: #A8C4E0;
-                            font-weight: 500; margin-bottom: 4px;">
-                    AI Thinking Studio™ Lite
-                </div>
-                <div style="font-size: 0.8rem; color: #3A5A79; letter-spacing: 0.1em;
-                            text-transform: uppercase;">
-                    A structured thinking environment
-                </div>
-            </div>
-        </div>
-        """,
-        unsafe_allow_html=True,
-    )
+    st.markdown(auth_brand_html(), unsafe_allow_html=True)
 
     # Login form only — accounts are provisioned by the facilitator
     col1, col2, col3 = st.columns([1, 2, 1])
@@ -72,11 +57,15 @@ def render_auth_page():
 
     # Promise reminder
     st.markdown(
-        """
+        f"""
         <div style="text-align: center; margin-top: 48px; padding: 0 24px;">
-            <div style="font-size: 0.78rem; color: #2A4A6A; font-style: italic; line-height: 1.8;">
+            <div style="font-size: 0.78rem; color: #918E86; line-height: 1.8;">
                 This Studio will not tell you what to think.<br>
                 It is designed to help you examine conclusions more thoroughly before reaching them.
+            </div>
+            <div style="font-family:'EMG Cormorant',serif;font-size:1.25rem;color:#C9A96E;margin-top:18px;">{BRAND_LINE}</div>
+            <div style="font-size:0.68rem;color:#6F6A62;margin-top:18px;">
+                By signing in, you acknowledge that AI supports examination but does not replace your judgment.
             </div>
         </div>
         """,
@@ -124,8 +113,8 @@ def render_logout_button():
     email = get_user_email()
     st.markdown(
         f"""
-        <div style="padding: 8px 12px; font-size: 0.75rem; color: #3A5A79;
-                    border-top: 1px solid #1A2E45; margin-top: 8px;">
+        <div style="padding: 8px 12px; font-size: 0.75rem; color: #7E796F;
+                    border-top: 1px solid #292832; margin-top: 8px;">
             {email}
         </div>
         """,

@@ -1,6 +1,6 @@
 """
 core/prompts.py
-Builds structured prompts for each Thinking Expedition room.
+Builds structured prompts for each Thinking Session room.
 
 Doctrine enforced in every prompt:
 - Do not recommend final decisions.
@@ -210,7 +210,7 @@ Do not rank or recommend. The participant selects what to carry forward.
 
 def build_battlefield_prompt(expedition_data: dict, participant_risk: str = "") -> str:
     """
-    Battlefield Room: Challenge selected ideas with firm, constructive scrutiny.
+    Challenge Room: Challenge selected ideas with firm, constructive scrutiny.
     Cross-room: explicitly references Mirror assumptions in the challenge.
     Accepts optional participant_risk — their own assessment entered before AI runs.
     """
@@ -240,7 +240,7 @@ Before seeing the AI challenge, the participant identified this as their biggest
 
 > {participant_risk.strip()}
 
-Acknowledge this directly in your response. Begin the Battlefield challenge by noting whether
+Acknowledge this directly in your response. Begin the Challenge challenge by noting whether
 this concern aligns with, differs from, or adds to what the examination surfaces.
 Do not validate or dismiss it. Examine it.
 """
@@ -249,7 +249,7 @@ Do not validate or dismiss it. Examine it.
 {DOCTRINE_REMINDER}
 {OUTPUT_DISCIPLINE}
 
-You are helping a workshop participant stress-test selected ideas in the Battlefield Room.
+You are helping a workshop participant stress-test selected ideas in the Challenge Room.
 Tone: Firm, honest, constructive, skeptical. Not hostile. The goal is stronger thinking, not destroyed ideas.
 {mirror_context}{participant_context}
 ## Challenge Being Examined
@@ -289,7 +289,7 @@ Do not declare the idea correct. Do not recommend proceeding.
 def build_future_prompt(expedition_data: dict) -> str:
     """
     Future Room: Map implications, unintended consequences, and required conditions.
-    Cross-room: references Battlefield challenges to ground the consequence map.
+    Cross-room: references Challenge challenges to ground the consequence map.
     """
     challenge = expedition_data.get("revised_challenge") or expedition_data["challenge_statement"]
     selected = expedition_data.get("selected_ideas", [])
@@ -304,8 +304,8 @@ def build_future_prompt(expedition_data: dict) -> str:
         battlefield_context = """
 ## What Earlier Rooms Surfaced
 The participant has already examined their problem framing (Mirror Room) and stress-tested
-selected ideas (Battlefield Room). Let that inform the consequence map.
-Where Battlefield identified conditions that may be absent, the Future Room should explore
+selected ideas (Challenge Room). Let that inform the consequence map.
+Where Challenge identified conditions that may be absent, the Future Room should explore
 what happens if those conditions do not materialise.
 """
 
@@ -388,7 +388,7 @@ def build_report_synthesis_prompt(session_data: dict) -> str:
     selected_text = "\n".join(f"- {i}" for i in selected) if selected else "None selected."
 
     return f"""
-You are synthesizing the outputs of a completed AI Thinking Studio™ Thinking Expedition.
+You are synthesizing the outputs of a completed AI Thinking Studio™ Thinking Session.
 Your role is to document how understanding evolved — not to recommend actions or declare conclusions.
 
 CRITICAL DOCTRINE:
@@ -425,7 +425,7 @@ CRITICAL DOCTRINE:
 **Selected Ideas for Stress-Testing:**
 {selected_text}
 
-**Participant's Pre-Battlefield Risk Identification:**
+**Participant's Pre-Challenge Risk Identification:**
 {participant_risk if participant_risk else "Not recorded."}
 
 **Participant's Final Reflection:**
@@ -444,7 +444,7 @@ CRITICAL DOCTRINE:
 ### Possibility Room Output:
 {possibility if possibility else "Not completed."}
 
-### Battlefield Room Output:
+### Challenge Room Output:
 {battlefield if battlefield else "Not completed."}
 
 ### Future Room Output:
@@ -466,7 +466,7 @@ Write a concise summary (6–8 sentences maximum) covering:
 1. The challenge that was examined — stated plainly.
 2. How the challenge was reframed during the expedition — be specific about what shifted.
 3. The most significant blind spot that emerged — quote or closely paraphrase from the Mirror Room.
-4. The most important assumption that was examined in the Battlefield Room.
+4. The most important assumption that was examined in the Challenge Room.
 5. The major questions that remain unresolved at the end of the expedition.
 6. One sentence on how understanding shifted from beginning to end.
 
@@ -525,7 +525,7 @@ Do not mark everything ✓ to appear thorough. Accuracy matters more than comple
 
 ## THE EDGE OF UNDERSTANDING
 
-This is the final page of the Thinking Expedition Record. It defines the current boundary of understanding.
+This is the final page of the Thinking Record. It defines the current boundary of understanding.
 It is not a recommendations page. It is not a next steps page. It is a philosophical ending.
 
 Use exactly this structure. No more, no less.

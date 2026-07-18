@@ -1,5 +1,5 @@
 -- ============================================================
--- AI Thinking Studio™ Lite — Supabase Setup Script
+-- AI Thinking Studio™ — Workshop Edition — Supabase Setup Script
 -- Run this once in your Supabase SQL Editor
 -- Project: https://etzizmgdgjgvigncbijq.supabase.co
 -- ============================================================

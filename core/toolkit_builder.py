@@ -1,8 +1,4 @@
-"""
-core/toolkit_builder.py
-Generates the AI Thinking Studio™ Lite — Examination Prompt Toolkit PDF.
-Workshop companion giveaway. Standalone document.
-"""
+"""Generate the Enable My Growth branded Examination Prompt Toolkit."""
 
 import io
 from reportlab.lib import colors
@@ -11,28 +7,30 @@ from reportlab.lib.pagesizes import A4
 from reportlab.lib.styles import ParagraphStyle
 from reportlab.lib.units import mm
 from reportlab.platypus import (
-    HRFlowable, KeepTogether, PageBreak, Paragraph,
+    HRFlowable, Image, KeepTogether, PageBreak, Paragraph,
     SimpleDocTemplate, Spacer, Table, TableStyle,
 )
 
+from core.brand import ASSETS, ENDORSEMENT, PRODUCT_NAME, register_brand_fonts
 from core.toolkit_data import TOOLKIT_SECTIONS
 
 W, H = A4
 
 # ── Palette ───────────────────────────────────────────────────────────────────
-INK       = colors.HexColor("#0D1117")
-DEEP      = colors.HexColor("#0F1B2D")
-RULE      = colors.HexColor("#1A2E45")
-WHITE     = colors.white
-GRAY_800  = colors.HexColor("#2A3A4A")
-GRAY_500  = colors.HexColor("#6B7F92")
-GRAY_200  = colors.HexColor("#E8EDF2")
-GOLD      = colors.HexColor("#C9A84C")
-GOLD_DARK = colors.HexColor("#8A6A20")
-ACCENT    = colors.HexColor("#5B82B5")
+INK       = colors.HexColor("#0A0A0F")
+DEEP      = colors.HexColor("#111118")
+RULE      = colors.HexColor("#292832")
+WHITE     = colors.HexColor("#EDEAE3")
+GRAY_800  = colors.HexColor("#2B2926")
+GRAY_500  = colors.HexColor("#706B63")
+GRAY_200  = colors.HexColor("#E7E1D8")
+GOLD      = colors.HexColor("#C9A96E")
+GOLD_DARK = colors.HexColor("#7A6038")
+ACCENT    = GOLD_DARK
+
+SERIF, SANS, SANS_MEDIUM = register_brand_fonts()
 
 FOOTER_TEXT  = "These prompts are not designed to help you reach conclusions faster. They are designed to help you examine challenges more thoroughly before reaching them."
-PRODUCT_NAME = "AI Thinking Studio™ Lite"
 DOC_TITLE    = "Examination Prompt Toolkit"
 
 
@@ -47,7 +45,7 @@ def _cover_canvas(canvas, doc):
     canvas.setFillColor(GOLD)
     canvas.rect(0, 0, W, 2.5 * mm, fill=1, stroke=0)
     # Subtle left rule
-    canvas.setFillColor(colors.HexColor("#1A2E45"))
+    canvas.setFillColor(colors.HexColor("#292832"))
     canvas.rect(0, 0, 3 * mm, H, fill=1, stroke=0)
     canvas.restoreState()
 
@@ -62,12 +60,12 @@ def _section_canvas(section_accent_hex: str):
         canvas.rect(0, 0, 3 * mm, H, fill=1, stroke=0)
         
         # Footer rule line
-        canvas.setStrokeColor(colors.HexColor("#D0D8E0"))
+        canvas.setStrokeColor(colors.HexColor("#E7E1D8"))
         canvas.setLineWidth(0.3)
         canvas.line(15 * mm, 18 * mm, W - 15 * mm, 18 * mm)
         
         # ── LINE 1: Meta Information (Pushed up safely) ───────────────────
-        canvas.setFont("Helvetica", 6.5)
+        canvas.setFont(SANS, 6.5)
         canvas.setFillColor(accent)
         canvas.drawString(15 * mm, 13.5 * mm, PRODUCT_NAME)
         canvas.drawRightString(W - 15 * mm, 13.5 * mm, DOC_TITLE)
@@ -75,7 +73,7 @@ def _section_canvas(section_accent_hex: str):
         # ── LINE 2: Wrapped Philosophy Text (Moved lower, prevents overlap) ─
         footer_style = ParagraphStyle(
             "FooterText",
-            fontName="Helvetica-Oblique",
+            fontName=SANS,
             fontSize=6,
             leading=8,
             textColor=GRAY_500,
@@ -104,7 +102,7 @@ def _intro_canvas(canvas, doc):
     canvas.line(15 * mm, 18 * mm, W - 15 * mm, 18 * mm)
     
     # ── LINE 1: Meta Information ───────────────────────────────────────
-    canvas.setFont("Helvetica", 6.5)
+    canvas.setFont(SANS, 6.5)
     canvas.setFillColor(ACCENT)
     canvas.drawString(15 * mm, 13.5 * mm, PRODUCT_NAME)
     canvas.drawRightString(W - 15 * mm, 13.5 * mm, DOC_TITLE)
@@ -112,7 +110,7 @@ def _intro_canvas(canvas, doc):
     # ── LINE 2: Wrapped Philosophy Text ────────────────────────────────
     footer_style = ParagraphStyle(
         "IntroFooterText",
-        fontName="Helvetica-Oblique",
+        fontName=SANS,
         fontSize=6,
         leading=8,
         textColor=GRAY_500,
@@ -139,36 +137,36 @@ def _hex(h): return colors.HexColor(h)
 def _card(card: dict, accent_hex: str, accent_light_hex: str) -> list:
     """Render one Thinking Card as a Table-based panel."""
     accent    = _hex(accent_hex)
-    bg        = colors.HexColor("#F7F9FB")
-    prompt_bg    = colors.HexColor("#EDF3FA")
+    bg        = colors.HexColor("#F7F5EF")
+    prompt_bg    = colors.HexColor("#F3EDE1")
 
     num_p = ParagraphStyle(
-        "cn", fontName="Helvetica-Bold", fontSize=7.5,
+        "cn", fontName=SANS_MEDIUM, fontSize=7.5,
         leading=10, textColor=accent, spaceAfter=0,
     )
     title_p = ParagraphStyle(
-        "ct", fontName="Helvetica-Bold", fontSize=13,
+        "ct", fontName=SANS_MEDIUM, fontSize=13,
         leading=17, textColor=GRAY_800, spaceAfter=3,
     )
     label_p = ParagraphStyle(
-        "cl", fontName="Helvetica-Bold", fontSize=7,
+        "cl", fontName=SANS_MEDIUM, fontSize=7,
         leading=10, textColor=GRAY_500, spaceAfter=2,
         letterSpacing=1.2,
     )
     purpose_p = ParagraphStyle(
-        "cp", fontName="Helvetica-Oblique", fontSize=9,
+        "cp", fontName=SANS, fontSize=9,
         leading=13, textColor=GRAY_800, spaceAfter=0,
     )
     prompt_p = ParagraphStyle(
-        "cpr", fontName="Helvetica", fontSize=9.5,
+        "cpr", fontName=SANS, fontSize=9.5,
         leading=14, textColor=GRAY_800, spaceAfter=0,
     )
     why_p = ParagraphStyle(
-        "cw", fontName="Helvetica", fontSize=8.5,
+        "cw", fontName=SANS, fontSize=8.5,
         leading=13, textColor=GRAY_500, spaceAfter=0,
     )
     when_p = ParagraphStyle(
-        "cwh", fontName="Helvetica-Bold", fontSize=8.5,
+        "cwh", fontName=SANS_MEDIUM, fontSize=8.5,
         leading=13, textColor=accent, spaceAfter=0,
     )
 
@@ -259,16 +257,16 @@ def _section_header(section: dict) -> list:
     a_light = _hex(section["accent_light"])
 
     title_p = ParagraphStyle(
-        "sh_title", fontName="Helvetica-Bold", fontSize=20,
+        "sh_title", fontName=SANS_MEDIUM, fontSize=20,
         leading=26, textColor=a_light, spaceAfter=2,
     )
     obj_p = ParagraphStyle(
-        "sh_obj", fontName="Helvetica-Bold", fontSize=8,
+        "sh_obj", fontName=SANS_MEDIUM, fontSize=8,
         leading=12, textColor=accent, spaceAfter=4, letterSpacing=1.5,
     )
     purpose_p = ParagraphStyle(
-        "sh_purpose", fontName="Helvetica", fontSize=9,
-        leading=14, textColor=colors.HexColor("#8899AA"), spaceAfter=0,
+        "sh_purpose", fontName=SANS, fontSize=9,
+        leading=14, textColor=colors.HexColor("#B7B2A8"), spaceAfter=0,
     )
 
     col_w = W - 36 * mm
@@ -321,27 +319,31 @@ def generate_toolkit_pdf() -> bytes:
 
     # ── COVER ────────────────────────────────────────────────────────────────
     cover_product_p = ParagraphStyle(
-        "cov_prod", fontName="Helvetica", fontSize=9,
-        leading=13, textColor=colors.HexColor("#8899AA"),
+        "cov_prod", fontName=SANS, fontSize=9,
+        leading=13, textColor=colors.HexColor("#B7B2A8"),
         alignment=TA_CENTER, letterSpacing=3,
     )
     cover_title_p = ParagraphStyle(
-        "cov_title", fontName="Helvetica-Bold", fontSize=32,
+        "cov_title", fontName=SERIF, fontSize=32,
         leading=38, textColor=WHITE, alignment=TA_CENTER, spaceAfter=4,
     )
     cover_tagline_p = ParagraphStyle(
-        "cov_tag", fontName="Helvetica-Oblique", fontSize=10,
-        leading=16, textColor=colors.HexColor("#6B7F92"),
+        "cov_tag", fontName=SANS, fontSize=10,
+        leading=16, textColor=colors.HexColor("#706B63"),
         alignment=TA_CENTER, spaceAfter=4,
     )
     cover_count_p = ParagraphStyle(
-        "cov_count", fontName="Helvetica", fontSize=9,
-        leading=13, textColor=colors.HexColor("#3A5A79"),
+        "cov_count", fontName=SANS, fontSize=9,
+        leading=13, textColor=colors.HexColor("#7E796F"),
         alignment=TA_CENTER,
     )
 
-    story.append(Spacer(1, 44 * mm))
-    story.append(Paragraph("AI THINKING STUDIO™ LITE", cover_product_p))
+    story.append(Spacer(1, 16 * mm))
+    logo = Image(str(ASSETS / "emg-3d-lockup.png"), width=72 * mm, height=21 * mm)
+    logo.hAlign = "CENTER"
+    story.append(logo)
+    story.append(Spacer(1, 10 * mm))
+    story.append(Paragraph("AI THINKING STUDIO™ · WORKSHOP EDITION", cover_product_p))
     story.append(Spacer(1, 8))
     story.append(Paragraph("Examination Prompt", cover_title_p))
     story.append(Paragraph("Toolkit", cover_title_p))
@@ -373,7 +375,9 @@ def generate_toolkit_pdf() -> bytes:
         "6 Thinking Sections  ·  30 Examination Prompts",
         cover_count_p,
     ))
-    story.append(Spacer(1, 48 * mm))
+    story.append(Spacer(1, 6 * mm))
+    story.append(Paragraph(ENDORSEMENT, cover_count_p))
+    story.append(Spacer(1, 34 * mm))
     story.append(Paragraph(
         "Every prompt in this toolkit exists to improve the quality of examination before decisions are made.",
         cover_tagline_p,
@@ -384,19 +388,19 @@ def generate_toolkit_pdf() -> bytes:
     page_callbacks[2] = _intro_canvas
 
     intro_title_p = ParagraphStyle(
-        "it", fontName="Helvetica-Bold", fontSize=18,
+        "it", fontName=SANS_MEDIUM, fontSize=18,
         leading=24, textColor=GRAY_800, spaceAfter=4,
     )
     intro_body_p = ParagraphStyle(
-        "ib", fontName="Helvetica", fontSize=10,
+        "ib", fontName=SANS, fontSize=10,
         leading=16, textColor=GRAY_800, spaceAfter=8,
     )
     intro_label_p = ParagraphStyle(
-        "il", fontName="Helvetica-Bold", fontSize=7.5,
+        "il", fontName=SANS_MEDIUM, fontSize=7.5,
         leading=11, textColor=GRAY_500, spaceAfter=3, letterSpacing=1.2,
     )
     intro_note_p = ParagraphStyle(
-        "in", fontName="Helvetica-Oblique", fontSize=9.5,
+        "in", fontName=SANS, fontSize=9.5,
         leading=15, textColor=GRAY_500, spaceAfter=0,
     )
 
@@ -406,7 +410,7 @@ def generate_toolkit_pdf() -> bytes:
 
     story.append(Paragraph(
         "This toolkit is not a prompt library. It is an examination companion.",
-        ParagraphStyle("ib2", parent=intro_body_p, fontName="Helvetica-Bold",
+        ParagraphStyle("ib2", parent=intro_body_p, fontName=SANS_MEDIUM,
                        textColor=ACCENT),
     ))
     story.append(Paragraph(
@@ -425,15 +429,15 @@ def generate_toolkit_pdf() -> bytes:
         accent_c = _hex(s["accent"])
         num_cards = len(s["cards"])
         sec_p = ParagraphStyle(
-            f"idx_{s['id']}", fontName="Helvetica-Bold", fontSize=10,
+            f"idx_{s['id']}", fontName=SANS_MEDIUM, fontSize=10,
             leading=14, textColor=accent_c,
         )
         obj_p2 = ParagraphStyle(
-            f"idxo_{s['id']}", fontName="Helvetica", fontSize=9,
+            f"idxo_{s['id']}", fontName=SANS, fontSize=9,
             leading=13, textColor=GRAY_500,
         )
         num_p2 = ParagraphStyle(
-            f"idxn_{s['id']}", fontName="Helvetica", fontSize=9,
+            f"idxn_{s['id']}", fontName=SANS, fontSize=9,
             leading=13, textColor=GRAY_500, alignment=TA_RIGHT,
         )
         index_rows.append([
@@ -466,9 +470,9 @@ def generate_toolkit_pdf() -> bytes:
         ("WHY IT MATTERS",         "The reasoning behind this line of examination."),
         ("WHEN TO USE",            "The moment in a thinking process where this prompt is most valuable."),
     ]
-    anat_label_p = ParagraphStyle("al", fontName="Helvetica-Bold", fontSize=8.5,
+    anat_label_p = ParagraphStyle("al", fontName=SANS_MEDIUM, fontSize=8.5,
                                    leading=13, textColor=ACCENT)
-    anat_body_p  = ParagraphStyle("ab", fontName="Helvetica", fontSize=8.5,
+    anat_body_p  = ParagraphStyle("ab", fontName=SANS, fontSize=8.5,
                                    leading=13, textColor=GRAY_800)
     anat_col_w   = [(W-36*mm)*0.28, (W-36*mm)*0.72]
     anat_rows_fmt = [[Paragraph(r[0], anat_label_p), Paragraph(r[1], anat_body_p)]
@@ -519,15 +523,15 @@ def generate_toolkit_pdf() -> bytes:
         page_callbacks[p] = _intro_canvas
 
     back_title_p = ParagraphStyle(
-        "bt", fontName="Helvetica-Bold", fontSize=18,
+        "bt", fontName=SANS_MEDIUM, fontSize=18,
         leading=24, textColor=GRAY_800, spaceAfter=4, alignment=TA_CENTER,
     )
     back_body_p = ParagraphStyle(
-        "bb", fontName="Helvetica", fontSize=10,
+        "bb", fontName=SANS, fontSize=10,
         leading=16, textColor=GRAY_500, spaceAfter=8, alignment=TA_CENTER,
     )
     back_doctrine_p = ParagraphStyle(
-        "bd", fontName="Helvetica-Bold", fontSize=12,
+        "bd", fontName=SANS_MEDIUM, fontSize=12,
         leading=18, textColor=ACCENT, spaceAfter=4, alignment=TA_CENTER,
     )
 
@@ -552,7 +556,7 @@ def generate_toolkit_pdf() -> bytes:
     story.append(Spacer(1, 24))
     story.append(Paragraph(
         "Better thinking begins before better answers.",
-        ParagraphStyle("bq", fontName="Helvetica-Oblique", fontSize=13,
+        ParagraphStyle("bq", fontName=SANS, fontSize=13,
                        leading=18, textColor=GOLD, alignment=TA_CENTER),
     ))
 

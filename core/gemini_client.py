@@ -1,6 +1,6 @@
 """
 core/gemini_client.py
-AI provider for AI Thinking Studio™ Lite — Google Gemini (default).
+AI provider for AI Thinking Studio™ — Google Gemini (default).
 
 Uses the official Google Gen AI SDK (google-genai).
 Exposes a single function: generate_ai_response(prompt) -> str

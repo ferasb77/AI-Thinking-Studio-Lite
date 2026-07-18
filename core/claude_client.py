@@ -1,6 +1,6 @@
 """
 core/claude_client.py
-AI provider for AI Thinking Studio™ Lite — Anthropic Claude.
+AI provider for AI Thinking Studio™ — Anthropic Claude.
 
 Uses the official Anthropic Python SDK.
 Exposes a single function: generate_ai_response(prompt) -> str

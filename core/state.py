@@ -1,6 +1,6 @@
 """
 core/state.py
-Session state management for AI Thinking Studio™ Lite.
+Session state management for AI Thinking Studio™.
 
 Handles both local session state (Streamlit) and
 Supabase persistence (load/save per expedition).
@@ -22,24 +22,24 @@ STEPS = [
 
 STEP_LABELS = {
     "studio_promise":   "Studio Promise",
-    "expedition_setup": "Expedition Setup",
+    "expedition_setup": "Session Setup",
     "mirror_room":      "Mirror Room",
     "human_room":       "Human Room",
     "possibility_room": "Possibility Room",
-    "battlefield_room": "Battlefield Room",
+    "battlefield_room": "Challenge Room",
     "future_room":      "Future Room",
-    "summary_export":   "Expedition Record",
+    "summary_export":   "Thinking Record",
 }
 
 STEP_ICONS = {
-    "studio_promise":   "◈",
-    "expedition_setup": "◎",
-    "mirror_room":      "⬡",
-    "human_room":       "◉",
-    "possibility_room": "◈",
-    "battlefield_room": "◆",
-    "future_room":      "◇",
-    "summary_export":   "■",
+    "studio_promise":   "00",
+    "expedition_setup": "01",
+    "mirror_room":      "02",
+    "human_room":       "03",
+    "possibility_room": "04",
+    "battlefield_room": "05",
+    "future_room":      "06",
+    "summary_export":   "07",
 }
 
 # All expedition-related state keys (persisted to Supabase)

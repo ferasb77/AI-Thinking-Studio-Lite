@@ -1,8 +1,4 @@
-"""
-core/report_builder.py
-AI Thinking Studio™ Lite — PDF Report Builder
-Visual identity: dark premium, editorial, high contrast.
-"""
+"""Enable My Growth branded Thinking Record PDF builder."""
 
 import io
 import re
@@ -14,44 +10,47 @@ from reportlab.lib.pagesizes import A4
 from reportlab.lib.styles import ParagraphStyle
 from reportlab.lib.units import mm
 from reportlab.platypus import (
-    HRFlowable, KeepTogether, PageBreak, Paragraph,
+    HRFlowable, Image, KeepTogether, PageBreak, Paragraph,
     SimpleDocTemplate, Spacer, Table, TableStyle,
 )
+
+from core.brand import ASSETS, ENDORSEMENT, PRODUCT_NAME, register_brand_fonts
 
 W, H = A4
 CONTENT_W = W - 36 * mm   # usable text width
 
 # ── Palette ───────────────────────────────────────────────────────────────────
-INK          = colors.HexColor("#0D1117")
-DEEP         = colors.HexColor("#0F1B2D")
-RULE         = colors.HexColor("#1A2E45")
-ACCENT       = colors.HexColor("#5B82B5")
-ACCENT_LIGHT = colors.HexColor("#A8C4E0")
-WHITE        = colors.white
-OFF_WHITE    = colors.HexColor("#F0F4F8")
-GRAY_800     = colors.HexColor("#2A3A4A")
-GRAY_500     = colors.HexColor("#6B7F92")
-GRAY_300     = colors.HexColor("#B0BEC8")
-GOLD         = colors.HexColor("#C9A84C")
-GOLD_LIGHT   = colors.HexColor("#E8D08A")
-GOLD_BG      = colors.HexColor("#FDF8EC")
-GREEN        = colors.HexColor("#3A9E7A")
-GREEN_LIGHT  = colors.HexColor("#7ECFB0")
-GREEN_BG     = colors.HexColor("#EDF7F3")
-TEAL         = colors.HexColor("#3A7A9E")
-TEAL_LIGHT   = colors.HexColor("#7EC0E0")
-TEAL_BG      = colors.HexColor("#EDF6FA")
-RED_DARK     = colors.HexColor("#C05050")
+INK          = colors.HexColor("#0A0A0F")
+DEEP         = colors.HexColor("#111118")
+RULE         = colors.HexColor("#292832")
+ACCENT       = colors.HexColor("#7A6038")
+ACCENT_LIGHT = colors.HexColor("#EDEAE3")
+WHITE        = colors.HexColor("#EDEAE3")
+OFF_WHITE    = colors.HexColor("#F7F5EF")
+GRAY_800     = colors.HexColor("#2B2926")
+GRAY_500     = colors.HexColor("#706B63")
+GRAY_300     = colors.HexColor("#B7B2A8")
+GOLD         = colors.HexColor("#C9A96E")
+GOLD_LIGHT   = colors.HexColor("#D7BB83")
+GOLD_BG      = colors.HexColor("#F3EDE1")
+GREEN        = ACCENT
+GREEN_LIGHT  = GOLD_LIGHT
+GREEN_BG     = GOLD_BG
+TEAL         = ACCENT
+TEAL_LIGHT   = GOLD_LIGHT
+TEAL_BG      = GOLD_BG
+RED_DARK     = ACCENT
+
+SERIF, SANS, SANS_MEDIUM = register_brand_fonts()
 
 FOOTER_TEXT  = "The purpose of this Studio is not to accelerate conclusions, but to deepen examination."
-PRODUCT_NAME = "AI Thinking Studio™ Lite"
 
 ROOM_PALETTE = {
-    "Mirror Room":      (colors.HexColor("#0F1B2D"), ACCENT_LIGHT,  ACCENT),
-    "Human Room":       (colors.HexColor("#0D1F1A"), GREEN_LIGHT,   GREEN),
-    "Possibility Room": (colors.HexColor("#1A1408"), GOLD_LIGHT,    GOLD),
-    "Battlefield Room": (colors.HexColor("#1F0D0D"), colors.HexColor("#E8A0A0"), RED_DARK),
-    "Future Room":      (colors.HexColor("#12101F"), colors.HexColor("#B0A8E0"), colors.HexColor("#6B5DB5")),
+    "Mirror Room":      (DEEP, ACCENT_LIGHT, GOLD),
+    "Human Room":       (DEEP, ACCENT_LIGHT, GOLD),
+    "Possibility Room": (DEEP, ACCENT_LIGHT, GOLD),
+    "Challenge Room":   (DEEP, ACCENT_LIGHT, GOLD),
+    "Future Room":      (DEEP, ACCENT_LIGHT, GOLD),
 }
 
 # Lines starting with these are AI sign-offs / meta-commentary to suppress
@@ -67,63 +66,63 @@ SUPPRESSED_PREFIXES = (
 def _styles():
     S = {}
     S["cover_product"] = ParagraphStyle(
-        "cover_product", fontName="Helvetica", fontSize=9, leading=13,
+        "cover_product", fontName=SANS, fontSize=9, leading=13,
         textColor=GRAY_300, alignment=TA_CENTER, spaceAfter=0,
     )
     S["cover_title"] = ParagraphStyle(
-        "cover_title", fontName="Helvetica-Bold", fontSize=36, leading=42,
+        "cover_title", fontName=SERIF, fontSize=36, leading=42,
         textColor=WHITE, alignment=TA_CENTER, spaceAfter=4,
     )
     S["cover_challenge"] = ParagraphStyle(
-        "cover_challenge", fontName="Helvetica-Bold", fontSize=18, leading=24,
+        "cover_challenge", fontName=SERIF, fontSize=18, leading=24,
         textColor=WHITE, alignment=TA_CENTER, spaceAfter=6,
     )
     S["cover_meta"] = ParagraphStyle(
-        "cover_meta", fontName="Helvetica", fontSize=9, leading=13,
+        "cover_meta", fontName=SANS, fontSize=9, leading=13,
         textColor=GRAY_500, alignment=TA_CENTER,
     )
     S["cover_doctrine"] = ParagraphStyle(
-        "cover_doctrine", fontName="Helvetica-Oblique", fontSize=9, leading=14,
+        "cover_doctrine", fontName=SANS, fontSize=9, leading=14,
         textColor=GRAY_500, alignment=TA_CENTER,
     )
     S["setup_label"] = ParagraphStyle(
-        "setup_label", fontName="Helvetica-Bold", fontSize=7.5, leading=11,
+        "setup_label", fontName=SANS_MEDIUM, fontSize=7.5, leading=11,
         textColor=GRAY_500, spaceAfter=2,
     )
     S["setup_value"] = ParagraphStyle(
-        "setup_value", fontName="Helvetica", fontSize=10, leading=15,
+        "setup_value", fontName=SANS, fontSize=10, leading=15,
         textColor=GRAY_800, spaceAfter=0,
     )
     S["setup_revised"] = ParagraphStyle(
-        "setup_revised", fontName="Helvetica-Bold", fontSize=11, leading=16,
+        "setup_revised", fontName=SANS_MEDIUM, fontSize=11, leading=16,
         textColor=ACCENT, spaceAfter=0,
     )
     S["room_section"] = ParagraphStyle(
-        "room_section", fontName="Helvetica-Bold", fontSize=10, leading=14,
+        "room_section", fontName=SANS_MEDIUM, fontSize=10, leading=14,
         textColor=ACCENT, spaceBefore=14, spaceAfter=3,
     )
     S["body"] = ParagraphStyle(
-        "body", fontName="Helvetica", fontSize=9.5, leading=15,
+        "body", fontName=SANS, fontSize=9.5, leading=15,
         textColor=GRAY_800, spaceAfter=5,
     )
     S["bullet"] = ParagraphStyle(
-        "bullet", fontName="Helvetica", fontSize=9.5, leading=14,
+        "bullet", fontName=SANS, fontSize=9.5, leading=14,
         textColor=GRAY_800, leftIndent=14, spaceAfter=3,
     )
     S["bold_line"] = ParagraphStyle(
-        "bold_line", fontName="Helvetica-Bold", fontSize=9.5, leading=14,
+        "bold_line", fontName=SANS_MEDIUM, fontSize=9.5, leading=14,
         textColor=GRAY_800, spaceBefore=6, spaceAfter=2,
     )
     S["risk_label"] = ParagraphStyle(
-        "risk_label", fontName="Helvetica-Bold", fontSize=7, leading=10,
+        "risk_label", fontName=SANS_MEDIUM, fontSize=7, leading=10,
         textColor=GRAY_500, spaceAfter=3,
     )
     S["risk_text"] = ParagraphStyle(
-        "risk_text", fontName="Helvetica-Oblique", fontSize=10, leading=15,
+        "risk_text", fontName=SANS, fontSize=10, leading=15,
         textColor=ACCENT_LIGHT, spaceAfter=0,
     )
     S["doctrine"] = ParagraphStyle(
-        "doctrine", fontName="Helvetica-Oblique", fontSize=8, leading=12,
+        "doctrine", fontName=SANS, fontSize=8, leading=12,
         textColor=GRAY_500, alignment=TA_CENTER,
     )
     return S
@@ -149,10 +148,10 @@ def _interior_canvas(canvas, doc):
     canvas.setStrokeColor(RULE)
     canvas.setLineWidth(0.4)
     canvas.line(15 * mm, 18 * mm, W - 15 * mm, 18 * mm)
-    canvas.setFont("Helvetica-Oblique", 6.5)
+    canvas.setFont(SANS, 6.5)
     canvas.setFillColor(GRAY_500)
     canvas.drawCentredString(W / 2, 13 * mm, FOOTER_TEXT)
-    canvas.setFont("Helvetica", 6.5)
+    canvas.setFont(SANS, 6.5)
     canvas.setFillColor(ACCENT)
     canvas.drawString(15 * mm, 13 * mm, PRODUCT_NAME)
     canvas.drawRightString(W - 15 * mm, 13 * mm, f"Page {doc.page}")
@@ -169,16 +168,16 @@ def _room_canvas(room_name: str, subtitle: str):
         band_h = 28 * mm
         canvas.setFillColor(band_bg)
         canvas.rect(0, H - band_h, W, band_h, fill=1, stroke=0)
-        canvas.setFont("Helvetica-Bold", 18)
+        canvas.setFont(SERIF, 18)
         canvas.setFillColor(band_text)
         canvas.drawString(18 * mm, H - 16 * mm, room_name)
-        canvas.setFont("Helvetica", 8)
+        canvas.setFont(SANS, 8)
         canvas.setFillColor(GRAY_500)
         canvas.drawString(18 * mm, H - 22 * mm, subtitle.upper())
-        canvas.setFont("Helvetica-Oblique", 6.5)
+        canvas.setFont(SANS, 6.5)
         canvas.setFillColor(GRAY_500)
         canvas.drawCentredString(W / 2, 13 * mm, FOOTER_TEXT)
-        canvas.setFont("Helvetica", 6.5)
+        canvas.setFont(SANS, 6.5)
         canvas.setFillColor(ACCENT)
         canvas.drawString(15 * mm, 13 * mm, PRODUCT_NAME)
         canvas.drawRightString(W - 15 * mm, 13 * mm, f"Page {doc.page}")
@@ -234,24 +233,24 @@ def _extract_callout_content(line: str) -> str:
 
 # Callout trigger patterns → (display label, border, text, bg)
 CALLOUT_PATTERNS = {
-    "biggest blind spot":                  ("Biggest Blind Spot",                     GOLD,  GOLD_LIGHT,  colors.HexColor("#17120A")),
-    "most dangerous assumption":           ("Most Dangerous Assumption",               GOLD,  GOLD_LIGHT,  colors.HexColor("#17120A")),
-    "condition most likely to be absent":  ("Condition Most Likely To Be Absent",     TEAL,  TEAL_LIGHT,  colors.HexColor("#0A1520")),
-    "most unexpected direction":           ("Most Unexpected Direction",               TEAL,  TEAL_LIGHT,  colors.HexColor("#0A1520")),
-    "stakeholder most likely to surprise": ("Stakeholder Most Likely To Surprise You", TEAL, TEAL_LIGHT,  colors.HexColor("#0A1520")),
-    "consequence most likely to be ignored":("Consequence Most Likely To Be Ignored", GREEN, GREEN_LIGHT, colors.HexColor("#0A1710")),
-    "sign most likely to be missed":       ("Sign Most Likely To Be Missed",          GREEN, GREEN_LIGHT, colors.HexColor("#0A1710")),
+    "biggest blind spot":                  ("Biggest Blind Spot",                     GOLD,  GOLD_LIGHT,  colors.HexColor("#111118")),
+    "most dangerous assumption":           ("Most Dangerous Assumption",               GOLD,  GOLD_LIGHT,  colors.HexColor("#111118")),
+    "condition most likely to be absent":  ("Condition Most Likely To Be Absent",     TEAL,  TEAL_LIGHT,  colors.HexColor("#111118")),
+    "most unexpected direction":           ("Most Unexpected Direction",               TEAL,  TEAL_LIGHT,  colors.HexColor("#111118")),
+    "stakeholder most likely to surprise": ("Stakeholder Most Likely To Surprise You", TEAL, TEAL_LIGHT,  colors.HexColor("#111118")),
+    "consequence most likely to be ignored":("Consequence Most Likely To Be Ignored", GREEN, GREEN_LIGHT, colors.HexColor("#111118")),
+    "sign most likely to be missed":       ("Sign Most Likely To Be Missed",          GREEN, GREEN_LIGHT, colors.HexColor("#111118")),
 }
 
 
 def _callout_box(content: str, label: str, border_color, text_color, bg_color) -> list:
     """Render a visually distinct bordered callout panel."""
     label_p = ParagraphStyle(
-        "cl_label", fontName="Helvetica-Bold", fontSize=7, leading=10,
+        "cl_label", fontName=SANS_MEDIUM, fontSize=7, leading=10,
         textColor=border_color, spaceAfter=4,
     )
     text_p = ParagraphStyle(
-        "cl_text", fontName="Helvetica-Bold", fontSize=11, leading=16,
+        "cl_text", fontName=SANS_MEDIUM, fontSize=11, leading=16,
         textColor=text_color, spaceAfter=0,
     )
     cell = [Paragraph(label.upper(), label_p), Paragraph(content, text_p)]
@@ -270,7 +269,7 @@ def _callout_box(content: str, label: str, border_color, text_color, bg_color) -
 def _section_underline(title: str, room_accent) -> list:
     """Section sub-header with coloured underline."""
     label_p = ParagraphStyle(
-        "sb_label", fontName="Helvetica-Bold", fontSize=9.5,
+        "sb_label", fontName=SANS_MEDIUM, fontSize=9.5,
         leading=13, textColor=room_accent, spaceAfter=0,
     )
     t = Table([[Paragraph(title, label_p)]], colWidths=[CONTENT_W])
@@ -294,7 +293,7 @@ def _ai_content_block(text: str, styles: dict, room_name: str = "") -> list:
     _, _, room_accent = ROOM_PALETTE.get(room_name, (DEEP, ACCENT_LIGHT, ACCENT))
 
     bold_style = ParagraphStyle(
-        "ai_bold", fontName="Helvetica-Bold", fontSize=9.5, leading=14,
+        "ai_bold", fontName=SANS_MEDIUM, fontSize=9.5, leading=14,
         textColor=GRAY_800, spaceBefore=6, spaceAfter=2,
     )
 
@@ -417,11 +416,11 @@ def _thinking_journey_page(session_data: dict, styles: dict) -> list:
 
     # Header
     header_p = ParagraphStyle(
-        "jh", fontName="Helvetica-Bold", fontSize=20, leading=26,
+        "jh", fontName=SANS_MEDIUM, fontSize=20, leading=26,
         textColor=WHITE, spaceAfter=2,
     )
     sub_p = ParagraphStyle(
-        "js", fontName="Helvetica", fontSize=9, leading=13,
+        "js", fontName=SANS, fontSize=9, leading=13,
         textColor=GRAY_300, spaceAfter=0,
     )
     header_t = Table(
@@ -443,14 +442,14 @@ def _thinking_journey_page(session_data: dict, styles: dict) -> list:
     def node(label: str, content: str, label_color=GRAY_500,
              text_color=GRAY_800, bg=None):
         lp = ParagraphStyle(
-            f"nl", fontName="Helvetica-Bold", fontSize=7, leading=10,
+            f"nl", fontName=SANS_MEDIUM, fontSize=7, leading=10,
             textColor=label_color, spaceAfter=3,
         )
         tp = ParagraphStyle(
-            f"nt", fontName="Helvetica", fontSize=10, leading=15,
+            f"nt", fontName=SANS, fontSize=10, leading=15,
             textColor=text_color, spaceAfter=0,
         )
-        bg_color = bg or colors.HexColor("#F7F9FB")
+        bg_color = bg or colors.HexColor("#F7F5EF")
         cell = [Paragraph(label.upper(), lp), Paragraph(content or "—", tp)]
         t = Table([[cell]], colWidths=[CONTENT_W])
         t.setStyle(TableStyle([
@@ -464,7 +463,7 @@ def _thinking_journey_page(session_data: dict, styles: dict) -> list:
         return [KeepTogether([t]), Spacer(1, 2)]
 
     def arrow():
-        ap = ParagraphStyle("arr", fontName="Helvetica", fontSize=11,
+        ap = ParagraphStyle("arr", fontName=SANS, fontSize=11,
                             leading=14, textColor=GRAY_500, alignment=TA_CENTER)
         return [Paragraph("↓", ap), Spacer(1, 2)]
 
@@ -480,11 +479,11 @@ def _thinking_journey_page(session_data: dict, styles: dict) -> list:
     revised = session_data.get("revised_challenge", "")
     if revised:
         story.extend(node("How the challenge was reframed", revised,
-                          ACCENT, GRAY_800, colors.HexColor("#EDF3FA")))
+                          ACCENT, GRAY_800, colors.HexColor("#F3EDE1")))
         story.extend(arrow())
     elif items.get("best_reframe"):
         story.extend(node("Strongest alternative framing", items["best_reframe"],
-                          ACCENT, GRAY_800, colors.HexColor("#EDF3FA")))
+                          ACCENT, GRAY_800, colors.HexColor("#F3EDE1")))
         story.extend(arrow())
 
     if items.get("unexpected_direction"):
@@ -562,11 +561,11 @@ def _synthesis_page_title(title: str, subtitle: str, styles: dict,
     """Dark band title for synthesis pages."""
     accent = accent or ACCENT
     title_p = ParagraphStyle(
-        "syn_title", fontName="Helvetica-Bold", fontSize=20, leading=26,
+        "syn_title", fontName=SANS_MEDIUM, fontSize=20, leading=26,
         textColor=WHITE, spaceAfter=3,
     )
     sub_p = ParagraphStyle(
-        "syn_sub", fontName="Helvetica", fontSize=9, leading=13,
+        "syn_sub", fontName=SANS, fontSize=9, leading=13,
         textColor=GRAY_300, spaceAfter=0,
     )
     t = Table(
@@ -594,7 +593,7 @@ def _render_executive_summary(text: str, styles: dict) -> list:
     ))
 
     body_p = ParagraphStyle(
-        "exec_body", fontName="Helvetica", fontSize=10, leading=16,
+        "exec_body", fontName=SANS, fontSize=10, leading=16,
         textColor=GRAY_800, spaceAfter=6,
     )
 
@@ -626,19 +625,19 @@ def _render_evidence_gained(text: str, styles: dict) -> list:
     ))
 
     before_p = ParagraphStyle(
-        "eg_label_b", fontName="Helvetica-Bold", fontSize=7.5, leading=11,
+        "eg_label_b", fontName=SANS_MEDIUM, fontSize=7.5, leading=11,
         textColor=GRAY_500, spaceAfter=3,
     )
     after_p = ParagraphStyle(
-        "eg_label_a", fontName="Helvetica-Bold", fontSize=7.5, leading=11,
+        "eg_label_a", fontName=SANS_MEDIUM, fontSize=7.5, leading=11,
         textColor=TEAL, spaceAfter=3,
     )
     before_text_p = ParagraphStyle(
-        "eg_before", fontName="Helvetica-Oblique", fontSize=10, leading=15,
+        "eg_before", fontName=SANS, fontSize=10, leading=15,
         textColor=GRAY_800, spaceAfter=0,
     )
     after_text_p = ParagraphStyle(
-        "eg_after", fontName="Helvetica", fontSize=10, leading=15,
+        "eg_after", fontName=SANS, fontSize=10, leading=15,
         textColor=GRAY_800, spaceAfter=0,
     )
 
@@ -685,8 +684,8 @@ def _render_evidence_gained(text: str, styles: dict) -> list:
             ("RIGHTPADDING", (0, 0), (-1, -1), 14),
             ("TOPPADDING",   (0, 0), (-1, -1), 10),
             ("BOTTOMPADDING",(0, 0), (-1, -1), 10),
-            ("BACKGROUND",   (0, 0), (0, -1),  colors.HexColor("#F5F7FA")),
-            ("BACKGROUND",   (1, 0), (1, -1),  colors.HexColor("#EDF6FA")),
+            ("BACKGROUND",   (0, 0), (0, -1),  colors.HexColor("#F7F5EF")),
+            ("BACKGROUND",   (1, 0), (1, -1),  colors.HexColor("#F3EDE1")),
             ("LINEBEFORE",   (0, 0), (0, -1),  3, GRAY_500),
             ("LINEBEFORE",   (1, 0), (1, -1),  3, TEAL),
             ("LINEBELOW",    (0, 0), (-1, -1), 0.3, RULE),
@@ -707,7 +706,7 @@ def _render_current_state(text: str, styles: dict) -> list:
     ))
 
     sub_p = ParagraphStyle(
-        "cs_sub", fontName="Helvetica-Bold", fontSize=10, leading=14,
+        "cs_sub", fontName=SANS_MEDIUM, fontSize=10, leading=14,
         textColor=GOLD, spaceBefore=12, spaceAfter=4,
     )
     body_p = styles["body"]
@@ -715,11 +714,11 @@ def _render_current_state(text: str, styles: dict) -> list:
         "cs_bull", parent=body_p, leftIndent=14, spaceAfter=3,
     )
     check_p = ParagraphStyle(
-        "cs_check", fontName="Helvetica", fontSize=9.5, leading=14,
+        "cs_check", fontName=SANS, fontSize=9.5, leading=14,
         textColor=GRAY_800, leftIndent=8, spaceAfter=3,
     )
     check_done_p = ParagraphStyle(
-        "cs_check_done", fontName="Helvetica-Bold", fontSize=9.5, leading=14,
+        "cs_check_done", fontName=SANS_MEDIUM, fontSize=9.5, leading=14,
         textColor=GREEN, leftIndent=8, spaceAfter=3,
     )
 
@@ -738,7 +737,7 @@ def _render_current_state(text: str, styles: dict) -> list:
             story.append(_rule(GOLD, thickness=0.3, sb=2, sa=6))
             story.append(Paragraph(
                 "EXAMINATION INDICATORS",
-                ParagraphStyle("ci_hdr", fontName="Helvetica-Bold", fontSize=8,
+                ParagraphStyle("ci_hdr", fontName=SANS_MEDIUM, fontSize=8,
                                leading=12, textColor=GRAY_500, spaceAfter=6),
             ))
             continue
@@ -772,15 +771,15 @@ def _render_edge_of_understanding(text: str, styles: dict) -> list:
     story.extend(_synthesis_page_title(
         "The Edge of Understanding",
         "Not a recommendations page. The final boundary of what this expedition made visible.",
-        styles, colors.HexColor("#8B6DB5"),
+        styles, colors.HexColor("#7A6038"),
     ))
 
     sub_p = ParagraphStyle(
-        "eu_sub", fontName="Helvetica-Bold", fontSize=11, leading=15,
-        textColor=colors.HexColor("#8B6DB5"), spaceBefore=14, spaceAfter=5,
+        "eu_sub", fontName=SANS_MEDIUM, fontSize=11, leading=15,
+        textColor=colors.HexColor("#7A6038"), spaceBefore=14, spaceAfter=5,
     )
     body_p = ParagraphStyle(
-        "eu_body", fontName="Helvetica", fontSize=10, leading=16,
+        "eu_body", fontName=SANS, fontSize=10, leading=16,
         textColor=GRAY_800, spaceAfter=5,
     )
     bullet_p = ParagraphStyle(
@@ -805,14 +804,14 @@ def _render_edge_of_understanding(text: str, styles: dict) -> list:
 
     # Closing doctrine line
     story.append(Spacer(1, 20))
-    story.append(_rule(colors.HexColor("#8B6DB5"), thickness=0.8))
+    story.append(_rule(colors.HexColor("#7A6038"), thickness=0.8))
     story.append(Spacer(1, 8))
     story.append(Paragraph(
         "The purpose of the expedition is not to produce certainty. "
         "It is to make the current limits of understanding visible.",
         ParagraphStyle(
-            "eu_close", fontName="Helvetica-Oblique", fontSize=10, leading=16,
-            textColor=colors.HexColor("#8B6DB5"), alignment=TA_CENTER,
+            "eu_close", fontName=SANS, fontSize=10, leading=16,
+            textColor=colors.HexColor("#7A6038"), alignment=TA_CENTER,
         ),
     ))
 
@@ -841,7 +840,7 @@ def generate_pdf(session_data: dict, synthesis_text: str = "") -> bytes:
         buffer, pagesize=A4,
         leftMargin=18 * mm, rightMargin=18 * mm,
         topMargin=24 * mm, bottomMargin=24 * mm,
-        title="AI Thinking Studio™ Lite — Thinking Expedition Record",
+        title="AI Thinking Studio™ — Thinking Record",
         author=PRODUCT_NAME,
     )
 
@@ -849,30 +848,34 @@ def generate_pdf(session_data: dict, synthesis_text: str = "") -> bytes:
 
     # ── COVER ────────────────────────────────────────────────────────────────
     cover_product_p = ParagraphStyle(
-        "cov_prod", fontName="Helvetica", fontSize=9, leading=13,
+        "cov_prod", fontName=SANS, fontSize=9, leading=13,
         textColor=GRAY_300, alignment=TA_CENTER,
     )
     cover_title_p = ParagraphStyle(
-        "cov_t", fontName="Helvetica-Bold", fontSize=36, leading=42,
+        "cov_t", fontName=SERIF, fontSize=36, leading=42,
         textColor=WHITE, alignment=TA_CENTER, spaceAfter=4,
     )
     cover_sub_p = ParagraphStyle(
-        "cov_s", fontName="Helvetica-Bold", fontSize=18, leading=24,
+        "cov_s", fontName=SERIF, fontSize=18, leading=24,
         textColor=WHITE, alignment=TA_CENTER, spaceAfter=6,
     )
     cover_meta_p = ParagraphStyle(
-        "cov_m", fontName="Helvetica", fontSize=9, leading=13,
+        "cov_m", fontName=SANS, fontSize=9, leading=13,
         textColor=GRAY_500, alignment=TA_CENTER,
     )
     cover_doc_p = ParagraphStyle(
-        "cov_d", fontName="Helvetica-Oblique", fontSize=9, leading=14,
+        "cov_d", fontName=SANS, fontSize=9, leading=14,
         textColor=GRAY_500, alignment=TA_CENTER,
     )
 
-    story.append(Spacer(1, 38 * mm))
-    story.append(Paragraph("AI THINKING STUDIO™ LITE", cover_product_p))
+    story.append(Spacer(1, 17 * mm))
+    logo = Image(str(ASSETS / "emg-3d-lockup.png"), width=72 * mm, height=21 * mm)
+    logo.hAlign = "CENTER"
+    story.append(logo)
+    story.append(Spacer(1, 11 * mm))
+    story.append(Paragraph("AI THINKING STUDIO™ · WORKSHOP EDITION", cover_product_p))
     story.append(Spacer(1, 6))
-    story.append(Paragraph("Thinking Expedition", cover_title_p))
+    story.append(Paragraph("Thinking Record", cover_title_p))
     story.append(Spacer(1, 4))
 
     # Gold centred rule
@@ -892,20 +895,16 @@ def generate_pdf(session_data: dict, synthesis_text: str = "") -> bytes:
     ]))
     story.append(gr_wrap)
 
-    record_p = ParagraphStyle(
-        "cov_record", fontName="Helvetica", fontSize=11, leading=16,
-        textColor=GOLD, alignment=TA_CENTER, spaceAfter=6,
-    )
-    story.append(Paragraph("Record", record_p))
-
-    challenge_title = setup.get("challenge_title", "Untitled Expedition")
+    challenge_title = setup.get("challenge_title", "Untitled Session")
     story.append(Paragraph(challenge_title, cover_sub_p))
+    story.append(Spacer(1, 4))
+    story.append(Paragraph(ENDORSEMENT, cover_meta_p))
     story.append(Spacer(1, 4))
     story.append(Paragraph(
         f"Generated {datetime.now().strftime('%d %B %Y')}",
         cover_meta_p,
     ))
-    story.append(Spacer(1, 48 * mm))
+    story.append(Spacer(1, 35 * mm))
     story.append(Paragraph(FOOTER_TEXT, cover_doc_p))
     story.append(PageBreak())
 
@@ -913,11 +912,11 @@ def generate_pdf(session_data: dict, synthesis_text: str = "") -> bytes:
     page_callbacks[2] = _interior_canvas
 
     setup_title_p = ParagraphStyle(
-        "st", fontName="Helvetica-Bold", fontSize=16, leading=20,
+        "st", fontName=SANS_MEDIUM, fontSize=16, leading=20,
         textColor=GRAY_800, spaceAfter=2,
     )
     story.append(Spacer(1, 4))
-    story.append(Paragraph("Expedition Setup", setup_title_p))
+    story.append(Paragraph("Session Setup", setup_title_p))
     story.append(_rule(ACCENT, thickness=1, sb=4, sa=12))
 
     col_w = [CONTENT_W * 0.32, CONTENT_W * 0.68]
@@ -971,7 +970,7 @@ def generate_pdf(session_data: dict, synthesis_text: str = "") -> bytes:
         ("mirror_output",      "Mirror Room",      "Assumption Inventory & Examination Gaps"),
         ("human_output",       "Human Room",       "Stakeholder Perspective Map"),
         ("possibility_output", "Possibility Room", "Directions Worth Examining"),
-        ("battlefield_output", "Battlefield Room", "Where Ideas Get Challenged"),
+        ("battlefield_output", "Challenge Room", "Where Ideas Get Challenged"),
         ("future_output",      "Future Room",      "How This Unfolds Over Time"),
     ]
 
@@ -985,7 +984,7 @@ def generate_pdf(session_data: dict, synthesis_text: str = "") -> bytes:
 
         story.append(Spacer(1, 34 * mm))
 
-        # Participant risk block (Battlefield only)
+        # Participant risk block (Challenge Room only)
         if key == "battlefield_output":
             participant_risk = session_data.get("participant_risk", "").strip()
             if participant_risk:
@@ -998,7 +997,7 @@ def generate_pdf(session_data: dict, synthesis_text: str = "") -> bytes:
                 ]
                 risk_t = Table([[risk_cell]], colWidths=[CONTENT_W])
                 risk_t.setStyle(TableStyle([
-                    ("BACKGROUND",   (0, 0), (-1, -1), colors.HexColor("#0F1824")),
+                    ("BACKGROUND",   (0, 0), (-1, -1), colors.HexColor("#111118")),
                     ("LEFTPADDING",  (0, 0), (-1, -1), 14),
                     ("RIGHTPADDING", (0, 0), (-1, -1), 14),
                     ("TOPPADDING",   (0, 0), (-1, -1), 10),
@@ -1027,14 +1026,14 @@ def generate_pdf(session_data: dict, synthesis_text: str = "") -> bytes:
         page_counter[0] += 3
 
         si_p = ParagraphStyle(
-            "si", fontName="Helvetica-Bold", fontSize=16, leading=20,
+            "si", fontName=SANS_MEDIUM, fontSize=16, leading=20,
             textColor=GRAY_800, spaceAfter=2,
         )
         story.append(Spacer(1, 4))
         story.append(Paragraph("Selected Ideas", si_p))
         story.append(_rule(ACCENT, thickness=1, sb=4, sa=12))
         idea_p = ParagraphStyle(
-            "idea", fontName="Helvetica", fontSize=10, leading=15,
+            "idea", fontName=SANS, fontSize=10, leading=15,
             textColor=GRAY_800, leftIndent=14, spaceAfter=6,
         )
         for idea in selected:

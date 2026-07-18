@@ -1,6 +1,6 @@
 """
 core/db.py
-Database access layer for AI Thinking Studio™ Lite.
+Database access layer for AI Thinking Studio™.
 
 All Supabase read/write operations go through this module.
 The rest of the app never imports supabase directly.

@@ -1,147 +1,125 @@
-# AI Thinking Studio™ Lite
+# AI Thinking Studio™ — Workshop Edition
 
-**A structured thinking environment for AI-Powered Design Thinking**
+**A structured environment for examining decisions before reaching conclusions.**
 
----
+AI Thinking Studio is an Enable My Growth application, developed by Feras Banna.
 
-## What This Is
+> This Studio will not tell you what to think. It is not designed to help you
+> reach conclusions faster. It is designed to help you examine conclusions more
+> thoroughly before reaching them. You remain responsible for your judgments,
+> decisions, and actions.
 
-AI Thinking Studio™ Lite is a workshop companion platform built for participants of a 2-day **AI-Powered Design Thinking** workshop.
+## Purpose
 
-It is not a chatbot. It is not a recommendation engine. It is not a decision tool.
+The Studio supports workshop participants as they examine a consequential
+challenge through multiple perspectives. AI acts as a structured thinking
+companion—not an advisor, recommendation engine, or decision-maker.
 
-**The Studio Promise:**
+The product follows the Enable My Growth philosophy:
 
-> This Studio will not tell you what to think. It is not designed to help you reach conclusions faster. It is designed to help you examine conclusions more thoroughly before reaching them. You remain responsible for your judgments, decisions, and actions.
+**Perspective changes what becomes possible.**
 
----
+## The thinking sequence
 
-## The Six Thinking Rooms
+| Stage | Purpose |
+| --- | --- |
+| Session Setup | Define the challenge, context, affected groups and current direction. |
+| Mirror Room | Examine framing, assumptions, missing information and alternative interpretations. |
+| Human Room | Explore stakeholder perspectives, concerns, resistance and conditions for trust. |
+| Possibility Room | Expand the range of approaches before narrowing. |
+| Challenge Room | Stress-test selected ideas with firm, constructive scrutiny. |
+| Future Room | Examine consequences, unintended outcomes and required conditions. |
+| Thinking Record | Capture the evolution and current limits of understanding in a branded PDF. |
 
-The app guides participants through a structured **Thinking Expedition** comprising six rooms:
+## Product relationship
 
-| Room | Purpose |
-|------|---------|
-| **Mirror Room** | Examine how the challenge is currently framed. Surface assumptions. Explore alternative framings. |
-| **Human Room** | Map stakeholder perspectives, resistances, and needs. |
-| **Possibility Room** | Expand the range of approaches before narrowing. |
-| **Battlefield Room** | Stress-test selected ideas with firm, constructive scrutiny. |
-| **Future Room** | Map consequences, unintended outcomes, and required conditions. |
-| **Summary & Export** | Capture the complete expedition in a downloadable PDF. |
+- **Master brand:** Enable My Growth
+- **Founder:** Feras Banna
+- **Application:** AI Thinking Studio
+- **Edition:** Workshop Edition
+- **Endorsement:** An Enable My Growth application, developed by Feras Banna.
 
----
+The approved 3D Enable My Growth Möbius mark, brand fonts and colour system are
+included in `assets/`. Visual tokens and product language are centralized in
+`core/brand.py`.
 
-## Setup Instructions
+## Capabilities
 
-### 1. Clone or download this project
+- Facilitator-provisioned authentication
+- Saved, multi-session work through Supabase
+- Structured AI examination across five rooms
+- Human reflection before and after AI-supported examination
+- Branded Thinking Record PDF export
+- Branded Examination Prompt Toolkit PDF export
+- Provider abstraction supporting Anthropic by default, with optional Gemini
+  and OpenAI clients
 
-```bash
-git clone <your-repo-url>
-cd ai-thinking-studio-lite
-```
+## Setup
 
-### 2. Install dependencies
+1. Install dependencies:
 
-```bash
-pip install -r requirements.txt
-```
+   ```bash
+   pip install -r requirements.txt
+   ```
 
-### 3. Set up your environment variables
+2. Copy the environment example:
 
-Copy the example file and add your OpenAI API key:
+   ```bash
+   cp .env.example .env
+   ```
 
-```bash
-cp .env.example .env
-```
+3. Add the required credentials to `.env`.
 
-Edit `.env`:
+4. Apply `supabase_setup.sql` to the intended Supabase project.
+
+5. Run the application:
+
+   ```bash
+   streamlit run app.py
+   ```
+
+## Required environment variables
+
+| Variable | Purpose |
+| --- | --- |
+| `ANTHROPIC_API_KEY` | Default AI provider credential |
+| `ANTHROPIC_MODEL` | Default Anthropic model |
+| `SUPABASE_URL` | Supabase project URL |
+| `SUPABASE_KEY` | Supabase anonymous key |
+
+Optional Gemini and OpenAI variables are documented in `.env.example`.
+
+## Responsible-use boundary
+
+- AI must not recommend a final decision or course of action.
+- AI must not declare an option best, optimal or correct.
+- AI must help the participant expand, challenge and deepen examination.
+- Human judgment remains with the participant.
+- Users should not enter confidential, classified, personally identifiable or
+  commercially sensitive information unless they are authorized to process it
+  through the deployed environment.
+- Deployment owners must define and communicate retention, deletion, access and
+  model-provider arrangements before participant use.
+
+See `PRIVACY-AND-AI-USE.md` for the deployment checklist and participant-facing
+notice.
+
+## Project structure
 
 ```text
-OPENAI_API_KEY=your_actual_openai_api_key_here
-OPENAI_MODEL=gpt-4o-mini
+app.py                     Main Streamlit application
+core/brand.py              Identity tokens, fonts and logo helpers
+core/auth.py               Authentication experience
+core/state.py              Session state and stage labels
+core/prompts.py            Examination doctrine and AI prompts
+core/report_builder.py     Branded Thinking Record generator
+core/toolkit_builder.py    Branded prompt toolkit generator
+core/db.py                 Supabase persistence
+assets/                    Approved logo and licensed fonts
+supabase_setup.sql         Database setup
 ```
 
-> **Note:** `gpt-4o-mini` is the default and recommended model for cost efficiency. You can use `gpt-4o` for higher quality outputs if budget allows.
+## Ownership
 
-### 4. Run the app
-
-```bash
-streamlit run app.py
-```
-
-The app will open at `http://localhost:8501`.
-
----
-
-## Project Structure
-
-```
-ai-thinking-studio-lite/
-│
-├── app.py                  # Main Streamlit application and all page views
-├── requirements.txt        # Python dependencies
-├── .env.example            # Environment variable template
-├── README.md               # This file
-│
-├── core/
-│   ├── prompts.py          # AI prompt builders for each thinking room
-│   ├── openai_client.py    # OpenAI API client and response handler
-│   ├── report_builder.py   # ReportLab PDF generator
-│   └── state.py            # Streamlit session state management
-│
-└── assets/
-    └── .gitkeep
-```
-
----
-
-## Environment Variables
-
-| Variable | Description | Default |
-|----------|-------------|---------|
-| `OPENAI_API_KEY` | Your OpenAI API key (required) | — |
-| `OPENAI_MODEL` | The OpenAI model to use | `gpt-4o-mini` |
-
----
-
-## Doctrine
-
-This platform enforces the following doctrine at the AI prompt level:
-
-- AI must never recommend a final decision or course of action.
-- AI must never declare any idea as best, optimal, or correct.
-- AI must help the participant explore, not conclude.
-- Human judgment remains with the participant at all times.
-
-These are not just UX principles — they are embedded in every prompt sent to the AI.
-
----
-
-## What This Is Not
-
-This platform does not include:
-- Authentication or user accounts
-- Saved sessions or conversation history
-- Analytics or scoring
-- Collaboration features
-- Payment or access control
-- Recommendation scores or innovation metrics
-
-It is a workshop companion MVP. Nothing more, nothing less.
-
----
-
-## Extending This Tool
-
-The modular structure makes it straightforward to extend:
-
-- **Add a new room:** Add a page function in `app.py`, a prompt builder in `core/prompts.py`, and a new step in `core/state.py`.
-- **Change the AI model:** Update `OPENAI_MODEL` in your `.env` file.
-- **Modify PDF output:** Edit `core/report_builder.py`.
-- **Adjust prompts:** Edit `core/prompts.py` — each room has its own isolated function.
-
----
-
-## License
-
-Workshop companion tool. Not for commercial redistribution without permission.
+AI Thinking Studio™ is an Enable My Growth application developed by Feras Banna.
+It is not licensed for redistribution without written permission.

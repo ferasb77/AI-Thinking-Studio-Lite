@@ -1,8 +1,4 @@
-"""
-app.py
-AI Thinking Studio™ Lite — Main Application
-Multi-user edition with Supabase persistence.
-"""
+"""AI Thinking Studio — an Enable My Growth application."""
 
 import sys
 import os
@@ -12,6 +8,11 @@ if _root not in sys.path:
     sys.path.insert(0, _root)
 
 import streamlit as st  # noqa: E402
+
+from core.brand import (  # noqa: E402
+    BRAND_CSS, BRAND_LINE, ENDORSEMENT, PRODUCT_DESCRIPTOR,
+    PRODUCT_EDITION, PRODUCT_NAME, sidebar_brand_html,
+)
 
 from core.auth import (  # noqa: E402
     init_auth_state, is_authenticated, get_user_id,
@@ -40,90 +41,14 @@ from core.toolkit_builder import generate_toolkit_pdf  # noqa: E402
 
 # ── Page Config ────────────────────────────────────────────────────────────────
 st.set_page_config(
-    page_title="AI Thinking Studio™ Lite",
-    page_icon="◈",
+    page_title="AI Thinking Studio™ | Enable My Growth",
+    page_icon="◎",
     layout="wide",
     initial_sidebar_state="expanded",
 )
 
 # ── Global CSS ─────────────────────────────────────────────────────────────────
-st.markdown("""
-<style>
-    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Playfair+Display:wght@400;500;600&display=swap');
-
-    html, body, [class*="css"] { font-family: 'Inter', sans-serif; }
-    .stApp { background-color: #080E17; color: #D4DCE8; }
-
-    [data-testid="stSidebar"] {
-        background-color: #0B1420;
-        border-right: 1px solid #1A2E45;
-    }
-    [data-testid="stSidebar"] .stButton > button {
-        background: transparent; border: none; color: #8899AA;
-        font-size: 0.82rem; font-weight: 400; text-align: left;
-        padding: 6px 12px; width: 100%; border-radius: 4px;
-        transition: all 0.15s ease;
-    }
-    [data-testid="stSidebar"] .stButton > button:hover {
-        background: #1A2E45; color: #A8C4E0;
-    }
-
-    .room-header { font-family: 'Playfair Display', serif; font-size: 1.6rem;
-                   font-weight: 500; color: #A8C4E0; margin-bottom: 4px; }
-    .room-subtitle { font-size: 0.82rem; color: #5A7A99; margin-bottom: 20px;
-                     letter-spacing: 0.04em; text-transform: uppercase; }
-    .room-description { font-size: 0.93rem; color: #8899AA; line-height: 1.7;
-                        margin-bottom: 24px; border-left: 2px solid #1A2E45;
-                        padding-left: 16px; }
-
-    .promise-card { background: linear-gradient(135deg, #0F1B2D 0%, #0D1624 100%);
-                    border: 1px solid #2A4A6E; border-radius: 10px;
-                    padding: 40px 48px; margin: 24px 0; }
-    .promise-title { font-family: 'Playfair Display', serif; font-size: 2.2rem;
-                     font-weight: 500; color: #FFFFFF; margin-bottom: 8px; }
-    .promise-line { font-size: 1.05rem; color: #C4D4E4; line-height: 1.9; padding: 6px 0; }
-
-    .section-divider { border: none; border-top: 1px solid #1A2E45; margin: 24px 0; }
-
-    /* Dashboard card */
-    .expedition-card { background: #0F1B2D; border: 1px solid #1A2E45;
-                       border-radius: 6px; padding: 16px 20px; margin-bottom: 8px; }
-    .expedition-title { font-size: 0.95rem; color: #A8C4E0; font-weight: 500; margin-bottom: 4px; }
-    .expedition-meta  { font-size: 0.78rem; color: #3A5A79; }
-
-    .stTextInput > div > div > input,
-    .stTextArea > div > div > textarea {
-        background-color: #0F1B2D !important; border: 1px solid #1A2E45 !important;
-        color: #D4DCE8 !important; border-radius: 6px; font-size: 0.92rem;
-    }
-    .stTextInput > div > div > input:focus,
-    .stTextArea > div > div > textarea:focus {
-        border-color: #3A5A80 !important;
-        box-shadow: 0 0 0 2px rgba(60,100,150,0.15) !important;
-    }
-
-    .stButton > button {
-        background: #1A3A5C; color: #A8C4E0; border: 1px solid #2A5A8C;
-        border-radius: 6px; font-size: 0.88rem; font-weight: 500;
-        padding: 10px 24px; transition: all 0.15s ease;
-    }
-    .stButton > button:hover { background: #224A70; border-color: #4A8ABF; color: #D0E4F4; }
-
-    label, .stTextInput label, .stTextArea label {
-        color: #7A9AB8 !important; font-size: 0.82rem !important;
-        font-weight: 500 !important; letter-spacing: 0.04em !important;
-        text-transform: uppercase !important;
-    }
-
-    .stDownloadButton > button {
-        background: linear-gradient(135deg, #1A2E1A, #0E1E0E);
-        color: #4CAF8E; border: 1px solid #2A5A3A;
-        font-size: 0.88rem; font-weight: 500; padding: 10px 24px; border-radius: 6px;
-    }
-
-    #MainMenu, footer, header { visibility: hidden; }
-</style>
-""", unsafe_allow_html=True)
+st.markdown(BRAND_CSS, unsafe_allow_html=True)
 
 # ── Initialise state ───────────────────────────────────────────────────────────
 init_auth_state()
@@ -147,7 +72,7 @@ def autosave(key: str, value):
 def room_header(icon, title, subtitle, description):
     st.markdown(f"""
         <div style="margin-bottom: 8px;">
-            <span style="font-size:1.1rem; color:#5A7A99; letter-spacing:0.2em;">{icon}</span>
+            <span style="font-size:1.1rem; color:#918E86; letter-spacing:0.2em;">{icon}</span>
             &nbsp;&nbsp;
             <span class="room-subtitle">{subtitle}</span>
         </div>
@@ -175,7 +100,7 @@ def run_ai_room(prompt_fn, output_key: str, button_label: str, expedition_data: 
 
     if run:
         if not is_setup_complete():
-            st.warning("Please complete the Expedition Setup before using this room.")
+            st.warning("Please complete the Session Setup before using this room.")
             return False
         with st.spinner("Thinking deeply…"):
             try:
@@ -196,15 +121,7 @@ def run_ai_room(prompt_fn, output_key: str, button_label: str, expedition_data: 
 
 def render_sidebar():
     with st.sidebar:
-        st.markdown("""
-            <div style="padding: 20px 12px 8px 12px;">
-                <div style="font-family: 'Playfair Display', serif; font-size: 1.1rem;
-                            color: #A8C4E0; font-weight: 500;">AI Thinking Studio™</div>
-                <div style="font-size: 0.72rem; color: #3A5A79; letter-spacing: 0.08em;
-                            text-transform: uppercase; margin-top: 2px;">Lite Edition</div>
-            </div>
-            <hr style="border: none; border-top: 1px solid #1A2E45; margin: 8px 12px;">
-        """, unsafe_allow_html=True)
+        st.markdown(sidebar_brand_html(), unsafe_allow_html=True)
 
         for step in STEPS:
             label = STEP_LABELS[step]
@@ -214,17 +131,23 @@ def render_sidebar():
                 st.rerun()
 
         # Dashboard link
-        st.markdown("<hr style='border:none;border-top:1px solid #1A2E45;margin:16px 12px 8px;'>",
+        st.markdown("<hr style='border:none;border-top:1px solid #292832;margin:16px 12px 8px;'>",
                     unsafe_allow_html=True)
-        if st.button("⊞  My Expeditions", key="nav_dashboard"):
+        if st.button("⊞  My Thinking Sessions", key="nav_dashboard"):
             st.session_state.auth_expedition_id = None
             clear_expedition_state()
             st.rerun()
 
         st.markdown("""
-            <hr style="border: none; border-top: 1px solid #1A2E45; margin: 12px 12px;">
-            <div style="padding: 0 12px; font-size: 0.72rem; color: #2A4A6A; line-height: 1.6;">
+            <hr style="border: none; border-top: 1px solid #292832; margin: 12px 12px;">
+            <div style="padding: 0 12px; font-size: 0.72rem; color: #918E86; line-height: 1.6;">
                 Human judgment remains<br>with you at all times.
+            </div>
+            <div style="padding:12px 12px 2px;font-family:'EMG Cormorant',serif;font-size:0.98rem;color:#C9A96E;line-height:1.25;">
+                Perspective changes what becomes possible.
+            </div>
+            <div style="padding:8px 12px 4px;font-size:0.65rem;">
+                <a href="https://enablemygrowth.com" target="_blank">enablemygrowth.com</a>
             </div>
         """, unsafe_allow_html=True)
 
@@ -236,10 +159,10 @@ def render_sidebar():
 def page_dashboard():
     st.markdown("""
         <div style="margin-bottom: 8px;">
-            <div style="font-family: 'Playfair Display', serif; font-size: 1.8rem;
-                        color: #A8C4E0; font-weight: 500;">My Expeditions</div>
-            <div style="font-size: 0.82rem; color: #3A5A79; margin-top: 4px;">
-                Your thinking journeys, saved and waiting.
+            <div style="font-family: 'EMG Cormorant', serif; font-size: 2rem;
+                        color: #EDEAE3; font-weight: 500;">My Thinking Sessions</div>
+            <div style="font-size: 0.82rem; color: #918E86; margin-top: 4px;">
+                Your structured examinations, saved and ready to continue.
             </div>
         </div>
         <hr class="section-divider">
@@ -249,16 +172,16 @@ def page_dashboard():
 
     # ── Start new expedition ──
     st.markdown("""
-        <div style="font-size: 0.78rem; color: #5A7A99; text-transform: uppercase;
+        <div style="font-size: 0.78rem; color: #918E86; text-transform: uppercase;
                     letter-spacing: 0.08em; margin-bottom: 12px;">
-            New Expedition
+            New Thinking Session
         </div>
     """, unsafe_allow_html=True)
 
     col1, col2 = st.columns([3, 1])
     with col1:
         new_title = st.text_input(
-            "Expedition title",
+            "Thinking session title",
             placeholder="Give your challenge a working title…",
             label_visibility="collapsed",
             key="new_expedition_title",
@@ -266,7 +189,7 @@ def page_dashboard():
     with col2:
         if st.button("Start  →", type="primary", use_container_width=True):
             if not new_title.strip():
-                st.warning("Please enter a title for your expedition.")
+                st.warning("Please enter a title for your thinking session.")
             else:
                 try:
                     exp = create_expedition(user_id, new_title.strip())
@@ -278,27 +201,27 @@ def page_dashboard():
                     navigate_to("expedition_setup")
                     st.rerun()
                 except Exception as e:
-                    st.error(f"Could not create expedition: {e}")
+                    st.error(f"Could not create the thinking session: {e}")
 
     # ── Existing expeditions ──
     st.markdown("<hr class='section-divider'>", unsafe_allow_html=True)
     st.markdown("""
-        <div style="font-size: 0.78rem; color: #5A7A99; text-transform: uppercase;
+        <div style="font-size: 0.78rem; color: #918E86; text-transform: uppercase;
                     letter-spacing: 0.08em; margin-bottom: 12px;">
-            Previous Expeditions
+            Previous Thinking Sessions
         </div>
     """, unsafe_allow_html=True)
 
     try:
         expeditions = get_user_expeditions(user_id)
     except Exception as e:
-        st.error(f"Could not load expeditions: {e}")
+        st.error(f"Could not load thinking sessions: {e}")
         return
 
     if not expeditions:
         st.markdown("""
-            <div style="color: #3A5A79; font-size: 0.9rem; padding: 20px 0; font-style: italic;">
-                No expeditions yet. Start one above.
+            <div style="color: #7E796F; font-size: 0.9rem; padding: 20px 0; font-style: italic;">
+                No thinking sessions yet. Start one above.
             </div>
         """, unsafe_allow_html=True)
         return
@@ -307,7 +230,7 @@ def page_dashboard():
         with st.container():
             col1, col2, col3 = st.columns([5, 1, 1])
 
-            status_color = "#4CAF8E" if exp["status"] == "complete" else "#C9A84C"
+            status_color = "#C9A96E" if exp["status"] == "complete" else "#C9A96E"
             status_label = "Complete" if exp["status"] == "complete" else "In Progress"
 
             updated = exp.get("updated_at", "")[:10]
@@ -332,7 +255,7 @@ def page_dashboard():
                         navigate_to("expedition_setup")
                         st.rerun()
                     except Exception as e:
-                        st.error(f"Could not load expedition: {e}")
+                        st.error(f"Could not load the thinking session: {e}")
 
             with col3:
                 if st.button("Delete", key=f"del_{exp['id']}", use_container_width=True):
@@ -346,40 +269,42 @@ def page_dashboard():
 # ── Room pages ─────────────────────────────────────────────────────────────────
 
 def page_studio_promise():
-    st.markdown("""
+    st.markdown(f"""
         <div class="promise-card">
-            <div class="promise-title">AI Thinking Studio™ Lite</div>
-            <div style="font-size: 0.85rem; color: #3A5A79; letter-spacing: 0.1em;
+            <div class="promise-title">{PRODUCT_NAME}</div>
+            <div style="font-size: 0.72rem; color: #C9A96E; letter-spacing: 0.16em;
                         text-transform: uppercase; margin-bottom: 24px;">
-                A structured thinking environment for AI-Powered Design Thinking
+                {PRODUCT_EDITION}
             </div>
-            <hr style="border: none; border-top: 1px solid #1A2E45; margin: 0 0 24px 0;">
-            <div style="font-size: 0.8rem; color: #3A6A9A; letter-spacing: 0.12em;
+            <div style="font-size: 0.92rem; color: #918E86; margin-bottom: 24px;">{PRODUCT_DESCRIPTOR}</div>
+            <hr style="border: none; border-top: 1px solid #292832; margin: 0 0 24px 0;">
+            <div style="font-size: 0.8rem; color: #C9A96E; letter-spacing: 0.12em;
                         text-transform: uppercase; margin-bottom: 16px; font-weight: 600;">
                 The Studio Promise
             </div>
             <div class="promise-line">This Studio will not tell you what to think.</div>
             <div class="promise-line">It is not designed to help you reach conclusions faster.</div>
-            <div class="promise-line" style="color: #A8C4E0; font-weight: 500;">
+            <div class="promise-line" style="color: #EDEAE3; font-weight: 500;">
                 It is designed to help you examine conclusions more thoroughly before reaching them.
             </div>
             <div class="promise-line" style="margin-top: 8px;">
                 You remain responsible for your judgments, decisions, and actions.
             </div>
-            <div style="margin-top: 24px; padding-top: 20px; border-top: 1px solid #1A2E45;">
-                <span style="font-family: 'Playfair Display', serif; font-size: 1.1rem;
-                             color: #C9A84C; font-style: italic;">
+            <div style="margin-top: 24px; padding-top: 20px; border-top: 1px solid #292832;">
+                <span style="font-family: 'EMG Cormorant', serif; font-size: 1.35rem;
+                             color: #C9A96E; font-style: italic;">
                     Better thinking begins before better answers.
                 </span>
             </div>
+            <div style="margin-top:18px; color:#918E86; font-size:0.72rem; letter-spacing:0.05em;">{ENDORSEMENT}</div>
         </div>
     """, unsafe_allow_html=True)
 
     st.markdown("""
         <div style="margin: 32px 0 16px 0;">
-            <div style="font-size: 0.85rem; color: #5A7A99; line-height: 1.8;">
+            <div style="font-size: 0.85rem; color: #918E86; line-height: 1.8;">
                 This workshop companion will guide you through a structured
-                <strong style="color: #8899AA;">Thinking Expedition</strong> —
+                <strong style="color: #EDEAE3;">Thinking Session</strong> —
                 a series of thinking rooms, each designed to examine a different dimension
                 of your business challenge before you reach any conclusions.
             </div>
@@ -387,16 +312,33 @@ def page_studio_promise():
     """, unsafe_allow_html=True)
 
     st.markdown("<br>", unsafe_allow_html=True)
+
+    with st.expander("Privacy, data and the role of AI"):
+        st.markdown(
+            """
+            **AI supports examination; it does not make decisions.** Outputs may be incomplete,
+            mistaken, or shaped by the information you provide. You remain responsible for how
+            the material is interpreted and used.
+
+            Thinking sessions are stored so that you can return to them and prepare your Thinking
+            Record. Do not enter confidential, classified, personally identifiable, or commercially
+            sensitive information unless you are authorised to process it through this environment.
+
+            You may delete a session from your dashboard. For questions about access, retention,
+            or deletion, contact **feras@enablemygrowth.com**.
+            """
+        )
+
     col1, col2, col3 = st.columns([1, 2, 1])
     with col2:
-        if st.button("Go to My Expeditions  →", type="primary", use_container_width=True):
+        if st.button("Go to My Thinking Sessions  →", type="primary", use_container_width=True):
             st.session_state.auth_expedition_id = None
             clear_expedition_state()
             st.rerun()
 
 
 def page_expedition_setup():
-    room_header("◎", "Expedition Setup", "Define your challenge",
+    room_header("01", "Session Setup", "Define your challenge",
         "Before you can examine a problem thoroughly, you must define it with honesty. "
         "The quality of your answers here will shape the quality of every room that follows.")
 
@@ -428,7 +370,7 @@ def page_expedition_setup():
         hope_to_understand = st.text_area(
             "What Do You Hope to Understand More Clearly?",
             value=setup.get("hope_to_understand", ""),
-            placeholder="What specific questions or uncertainties would you like this expedition to surface?",
+            placeholder="What specific questions or uncertainties would you like this session to surface?",
             height=80,
         )
         submitted = st.form_submit_button("Save & Begin →", type="primary")
@@ -458,20 +400,20 @@ def page_expedition_setup():
                 except Exception:
                     pass
 
-            st.success("Expedition setup saved.")
+            st.success("Session setup saved.")
             navigate_to("mirror_room")
             st.rerun()
 
 
 def page_mirror_room():
-    room_header("⬡", "Mirror Room", "Problem Framing",
+    room_header("02", "Mirror Room", "Problem Framing",
         "The Mirror Room reflects your challenge back to you — not as an answer, but as a set of questions. "
         "Before you define the problem, examine how you are defining it. "
         "Assumptions live in the framing. Find them here.")
 
     if not is_setup_complete():
-        st.info("Complete the Expedition Setup first to use this room.")
-        if st.button("Go to Expedition Setup"):
+        st.info("Complete the Session Setup first to use this room.")
+        if st.button("Go to Session Setup"):
             navigate_to("expedition_setup")
             st.rerun()
         return
@@ -490,7 +432,7 @@ def page_mirror_room():
 
     if has_output:
         st.markdown("<hr class='section-divider'>", unsafe_allow_html=True)
-        st.markdown("""<div style='font-size:0.78rem;color:#5A7A99;text-transform:uppercase;
+        st.markdown("""<div style='font-size:0.78rem;color:#918E86;text-transform:uppercase;
                     letter-spacing:0.08em;margin-bottom:8px;'>Your Revised Challenge Statement</div>""",
                     unsafe_allow_html=True)
         st.caption("Review the options above, then write or edit your revised challenge statement below.")
@@ -514,12 +456,12 @@ def page_mirror_room():
 
 
 def page_human_room():
-    room_header("◉", "Human Room", "Stakeholder Perspectives",
+    room_header("03", "Human Room", "Stakeholder Perspectives",
         "Every challenge involves people whose perspectives you may not yet fully understand. "
         "The Human Room helps you see them more clearly before you engage them.")
 
     if not is_setup_complete():
-        st.info("Complete the Expedition Setup first.")
+        st.info("Complete the Session Setup first.")
         return
 
     custom = st.text_input(
@@ -545,13 +487,13 @@ def page_human_room():
 
 
 def page_possibility_room():
-    room_header("◈", "Possibility Room", "Expanding the Landscape",
+    room_header("04", "Possibility Room", "Expanding the Landscape",
         "Before you narrow toward a solution, expand. "
         "The Possibility Room generates a landscape of approaches without declaring any correct. "
         "You will select ideas to carry forward.")
 
     if not is_setup_complete():
-        st.info("Complete the Expedition Setup first.")
+        st.info("Complete the Session Setup first.")
         return
 
     expedition_data = get_expedition_data()
@@ -562,10 +504,10 @@ def page_possibility_room():
 
     if has_output:
         st.markdown("<hr class='section-divider'>", unsafe_allow_html=True)
-        st.markdown("""<div style='font-size:0.78rem;color:#5A7A99;text-transform:uppercase;
+        st.markdown("""<div style='font-size:0.78rem;color:#918E86;text-transform:uppercase;
                     letter-spacing:0.08em;margin-bottom:8px;'>Select Ideas to Carry Forward</div>""",
                     unsafe_allow_html=True)
-        st.caption("Choose 1–3 ideas to stress-test in the Battlefield Room.")
+        st.caption("Choose 1–3 ideas to stress-test in the Challenge Room.")
 
         current_ideas = st.session_state.get("selected_ideas", [])
         idea_inputs = []
@@ -586,18 +528,18 @@ def page_possibility_room():
 
         col1, col2 = st.columns([3, 1])
         with col2:
-            if st.button("Next: Battlefield Room →"):
+            if st.button("Next: Challenge Room →"):
                 navigate_to("battlefield_room")
                 st.rerun()
 
 
 def page_battlefield_room():
-    room_header("◆", "Battlefield Room", "Challenging Selected Ideas",
+    room_header("05", "Challenge Room", "Challenging Selected Ideas",
         "An idea that has not been challenged is not ready. "
-        "The Battlefield Room stress-tests your selected approaches with firm, constructive skepticism.")
+        "The Challenge Room stress-tests your selected approaches with firm, constructive skepticism.")
 
     if not is_setup_complete():
-        st.info("Complete the Expedition Setup first.")
+        st.info("Complete the Session Setup first.")
         return
 
     selected = st.session_state.get("selected_ideas", [])
@@ -608,26 +550,26 @@ def page_battlefield_room():
             st.rerun()
         return
 
-    st.markdown("""<div style='font-size:0.78rem;color:#5A7A99;text-transform:uppercase;
+    st.markdown("""<div style='font-size:0.78rem;color:#918E86;text-transform:uppercase;
                 letter-spacing:0.08em;margin-bottom:8px;'>Ideas Being Challenged</div>""",
                 unsafe_allow_html=True)
     for idea in selected:
         st.markdown(
-            f"<div style='background:#0B1420;border-left:2px solid #2A5A8C;"
-            f"padding:8px 16px;margin:4px 0;font-size:0.9rem;color:#A0B8D0;'>{idea}</div>",
+            f"<div style='background:#111118;border-left:2px solid #7A6038;"
+            f"padding:8px 16px;margin:4px 0;font-size:0.9rem;color:#D8D3CA;'>{idea}</div>",
             unsafe_allow_html=True,
         )
 
     # Pre-challenge participant reflection
     st.markdown("<hr class='section-divider'>", unsafe_allow_html=True)
     st.markdown("""
-        <div style='background:#0B1420;border:1px solid #2A4A6E;border-radius:6px;
+        <div style='background:#111118;border:1px solid #7A6038;border-radius:6px;
                     padding:20px 24px;margin-bottom:20px;'>
-            <div style='font-size:0.78rem;color:#3A6A9A;text-transform:uppercase;
+            <div style='font-size:0.78rem;color:#C9A96E;text-transform:uppercase;
                         letter-spacing:0.08em;margin-bottom:8px;font-weight:600;'>
                 Before the AI Challenge
             </div>
-            <div style='font-size:0.9rem;color:#8899AA;line-height:1.7;'>
+            <div style='font-size:0.9rem;color:#B7B2A8;line-height:1.7;'>
                 Before the Studio examines your ideas — what do <em>you</em> think the biggest risk is?
             </div>
         </div>
@@ -654,7 +596,7 @@ def page_battlefield_room():
 
     has_output = run_ai_room(
         battlefield_with_risk, "battlefield_output",
-        "Generate Battlefield Challenge", expedition_data,
+        "Generate Challenge Review", expedition_data,
     )
     if has_output:
         col1, col2 = st.columns([3, 1])
@@ -665,13 +607,13 @@ def page_battlefield_room():
 
 
 def page_future_room():
-    room_header("◇", "Future Room", "Implications & Consequences",
+    room_header("06", "Future Room", "Implications & Consequences",
         "If you proceed, what happens next? Across 30 days, 6 months, and 1 year. "
         "Including the consequences you did not intend. "
         "This room does not tell you to proceed or stop. It tells you what to be ready for.")
 
     if not is_setup_complete():
-        st.info("Complete the Expedition Setup first.")
+        st.info("Complete the Session Setup first.")
         return
 
     expedition_data = get_expedition_data()
@@ -682,31 +624,31 @@ def page_future_room():
     if has_output:
         col1, col2 = st.columns([3, 1])
         with col2:
-            if st.button("Go to Expedition Record →"):
+            if st.button("Go to Thinking Record →"):
                 navigate_to("summary_export")
                 st.rerun()
 
 
 def page_summary_export():
-    room_header("■", "Expedition Record", "Review & Export",
-        "Your complete Thinking Expedition — from original framing to future implications — "
+    room_header("07", "Thinking Record", "Review & Export",
+        "Your complete Thinking Session — from original framing to future implications — "
         "documented in one place. Review what you've examined. Add your final reflection. Download your record.")
 
     setup = st.session_state.expedition_setup
 
     # Challenge overview
-    st.markdown("""<div style='font-size:0.78rem;color:#5A7A99;text-transform:uppercase;
+    st.markdown("""<div style='font-size:0.78rem;color:#918E86;text-transform:uppercase;
                 letter-spacing:0.08em;margin-bottom:12px;'>Your Challenge</div>""",
                 unsafe_allow_html=True)
 
     col1, col2 = st.columns(2)
     with col1:
         st.markdown(f"""
-            <div style='background:#0B1420;border:1px solid #1A2E45;border-radius:6px;
+            <div style='background:#111118;border:1px solid #292832;border-radius:6px;
                         padding:16px;margin-bottom:12px;'>
-                <div style='font-size:0.75rem;color:#3A6A9A;text-transform:uppercase;
+                <div style='font-size:0.75rem;color:#C9A96E;text-transform:uppercase;
                             letter-spacing:0.08em;margin-bottom:6px;'>Original Statement</div>
-                <div style='font-size:0.9rem;color:#A0B4C8;line-height:1.6;'>
+                <div style='font-size:0.9rem;color:#D8D3CA;line-height:1.6;'>
                     {setup.get('challenge_statement','—')}
                 </div>
             </div>
@@ -714,19 +656,19 @@ def page_summary_export():
     with col2:
         revised = st.session_state.get("revised_challenge", "")
         st.markdown(f"""
-            <div style='background:#0B1420;border:1px solid #2A4A6E;border-radius:6px;
+            <div style='background:#111118;border:1px solid #7A6038;border-radius:6px;
                         padding:16px;margin-bottom:12px;'>
-                <div style='font-size:0.75rem;color:#3A6A9A;text-transform:uppercase;
+                <div style='font-size:0.75rem;color:#C9A96E;text-transform:uppercase;
                             letter-spacing:0.08em;margin-bottom:6px;'>Revised Statement</div>
-                <div style='font-size:0.9rem;color:#C4D4E4;line-height:1.6;'>
-                    {revised if revised else '<span style="color:#3A5A79;font-style:italic;">Not yet set</span>'}
+                <div style='font-size:0.9rem;color:#D8D3CA;line-height:1.6;'>
+                    {revised if revised else '<span style="color:#7E796F;font-style:italic;">Not yet set</span>'}
                 </div>
             </div>
         """, unsafe_allow_html=True)
 
     # Room completion
     st.markdown("<hr class='section-divider'>", unsafe_allow_html=True)
-    st.markdown("""<div style='font-size:0.78rem;color:#5A7A99;text-transform:uppercase;
+    st.markdown("""<div style='font-size:0.78rem;color:#918E86;text-transform:uppercase;
                 letter-spacing:0.08em;margin-bottom:12px;'>Room Completion</div>""",
                 unsafe_allow_html=True)
 
@@ -734,16 +676,16 @@ def page_summary_export():
         ("mirror_output",      "Mirror Room"),
         ("human_output",       "Human Room"),
         ("possibility_output", "Possibility Room"),
-        ("battlefield_output", "Battlefield Room"),
+        ("battlefield_output", "Challenge Room"),
         ("future_output",      "Future Room"),
     ]
     cols = st.columns(5)
     for i, (key, label) in enumerate(status_rooms):
         done = bool(st.session_state.get(key, ""))
-        color = "#4CAF8E" if done else "#2A3A4A"
+        color = "#C9A96E" if done else "#2A3A4A"
         with cols[i]:
             st.markdown(f"""
-                <div style='background:#0B1420;border:1px solid {color};border-radius:6px;
+                <div style='background:#111118;border:1px solid {color};border-radius:6px;
                             padding:12px;text-align:center;'>
                     <div style='font-size:0.78rem;color:{color};font-weight:500;'>{label}</div>
                     <div style='font-size:0.72rem;color:{color};margin-top:4px;'>
@@ -755,37 +697,37 @@ def page_summary_export():
     # Room outputs
     st.markdown("<hr class='section-divider'>", unsafe_allow_html=True)
     for key, label in [
-        ("mirror_output",      "⬡ Mirror Room — Problem Framing"),
-        ("human_output",       "◉ Human Room — Stakeholder Perspectives"),
-        ("possibility_output", "◈ Possibility Room — Landscape of Approaches"),
-        ("battlefield_output", "◆ Battlefield Room — Stress Tests"),
-        ("future_output",      "◇ Future Room — Consequence Map"),
+        ("mirror_output",      "02 · Mirror Room — Problem Framing"),
+        ("human_output",       "03 · Human Room — Stakeholder Perspectives"),
+        ("possibility_output", "04 · Possibility Room — Landscape of Approaches"),
+        ("battlefield_output", "05 · Challenge Room — Stress Tests"),
+        ("future_output",      "06 · Future Room — Consequence Map"),
     ]:
         with st.expander(label, expanded=False):
             content = st.session_state.get(key, "")
             if content:
                 st.markdown(content)
             else:
-                st.markdown("<span style='color:#3A5A79;font-style:italic;'>Not completed.</span>",
+                st.markdown("<span style='color:#7E796F;font-style:italic;'>Not completed.</span>",
                             unsafe_allow_html=True)
 
     # Selected ideas
     selected = st.session_state.get("selected_ideas", [])
     if selected:
         st.markdown("<hr class='section-divider'>", unsafe_allow_html=True)
-        st.markdown("""<div style='font-size:0.78rem;color:#5A7A99;text-transform:uppercase;
+        st.markdown("""<div style='font-size:0.78rem;color:#918E86;text-transform:uppercase;
                     letter-spacing:0.08em;margin-bottom:8px;'>Selected Ideas</div>""",
                     unsafe_allow_html=True)
         for idea in selected:
-            st.markdown(f"<div style='padding:6px 0;color:#A0B4C8;font-size:0.9rem;'>◈  {idea}</div>",
+            st.markdown(f"<div style='padding:6px 0;color:#D8D3CA;font-size:0.9rem;'>—&nbsp; {idea}</div>",
                         unsafe_allow_html=True)
 
     # Final reflection
     st.markdown("<hr class='section-divider'>", unsafe_allow_html=True)
     st.markdown("""
-        <div style='font-size:0.78rem;color:#5A7A99;text-transform:uppercase;
+        <div style='font-size:0.78rem;color:#918E86;text-transform:uppercase;
                     letter-spacing:0.08em;margin-bottom:4px;'>Final Reflection</div>
-        <div style='font-size:0.88rem;color:#3A6A9A;margin-bottom:12px;font-style:italic;'>
+        <div style='font-size:0.88rem;color:#C9A96E;margin-bottom:12px;font-style:italic;'>
             What do you now understand more clearly than when you began?
         </div>
     """, unsafe_allow_html=True)
@@ -810,12 +752,12 @@ def page_summary_export():
 
     # ── PDF Export ────────────────────────────────────────────────────────────
     st.markdown("<hr class='section-divider'>", unsafe_allow_html=True)
-    st.markdown("""<div style='font-size:0.78rem;color:#5A7A99;text-transform:uppercase;
-                letter-spacing:0.08em;margin-bottom:12px;'>Export Your Expedition</div>""",
+    st.markdown("""<div style='font-size:0.78rem;color:#918E86;text-transform:uppercase;
+                letter-spacing:0.08em;margin-bottom:12px;'>Export Your Thinking Record</div>""",
                 unsafe_allow_html=True)
 
     if not is_setup_complete():
-        st.info("Complete the Expedition Setup to enable PDF export.")
+        st.info("Complete the Session Setup to enable PDF export.")
     else:
         if st.button("Prepare PDF Export", key="prepare_pdf"):
             st.session_state.final_reflection = reflection.strip()
@@ -861,18 +803,18 @@ def page_summary_export():
                 .lower().replace(" ", "-")
             )
             st.download_button(
-                label="⬇  Download Thinking Expedition Record (PDF)",
+                label="⬇  Download Thinking Record (PDF)",
                 data=st.session_state["_pdf_bytes"],
-                file_name=f"thinking-expedition-record-{title_slug}-{datetime.now().strftime('%Y%m%d')}.pdf",
+                file_name=f"ai-thinking-studio-record-{title_slug}-{datetime.now().strftime('%Y%m%d')}.pdf",
                 mime="application/pdf",
             )
 
     # ── Toolkit PDF ───────────────────────────────────────────────────────────
     st.markdown("<hr class='section-divider'>", unsafe_allow_html=True)
     st.markdown("""
-        <div style='font-size:0.78rem;color:#5A7A99;text-transform:uppercase;
+        <div style='font-size:0.78rem;color:#918E86;text-transform:uppercase;
                     letter-spacing:0.08em;margin-bottom:8px;'>Examination Prompt Toolkit</div>
-        <div style='font-size:0.88rem;color:#5A7A99;margin-bottom:12px;line-height:1.7;'>
+        <div style='font-size:0.88rem;color:#918E86;margin-bottom:12px;line-height:1.7;'>
             30 examination prompts for use with any AI assistant.
             Use with any AI assistant to deepen examination before decisions are made.
         </div>
