@@ -32,6 +32,7 @@ from core.db import (  # noqa: E402
 from core.prompts import (  # noqa: E402
     build_battlefield_prompt, build_future_prompt, build_human_prompt,
     build_mirror_prompt, build_possibility_prompt,
+    build_report_synthesis_prompt,
 )
 from core.claude_client import generate_ai_response  # noqa: E402
 from core.report_builder import generate_pdf  # noqa: E402
@@ -818,23 +819,23 @@ def page_summary_export():
     else:
         if st.button("Prepare PDF Export", key="prepare_pdf"):
             st.session_state.final_reflection = reflection.strip()
+
+            # Build session_data once — used by both synthesis and PDF builder
+            session_data = {
+                "expedition_setup":  st.session_state.expedition_setup,
+                "mirror_output":     st.session_state.get("mirror_output", ""),
+                "human_output":      st.session_state.get("human_output", ""),
+                "possibility_output":st.session_state.get("possibility_output", ""),
+                "battlefield_output":st.session_state.get("battlefield_output", ""),
+                "future_output":     st.session_state.get("future_output", ""),
+                "revised_challenge": st.session_state.get("revised_challenge", ""),
+                "selected_ideas":    st.session_state.get("selected_ideas", []),
+                "final_reflection":  st.session_state.get("final_reflection", ""),
+                "participant_risk":  st.session_state.get("participant_risk", ""),
+            }
+
             with st.spinner("Generating synthesis — this takes a moment…"):
                 try:
-                    from core.prompts import build_report_synthesis_prompt
-                    session_data = {
-                        "expedition_setup":  st.session_state.expedition_setup,
-                        "mirror_output":     st.session_state.get("mirror_output", ""),
-                        "human_output":      st.session_state.get("human_output", ""),
-                        "possibility_output":st.session_state.get("possibility_output", ""),
-                        "battlefield_output":st.session_state.get("battlefield_output", ""),
-                        "future_output":     st.session_state.get("future_output", ""),
-                        "revised_challenge": st.session_state.get("revised_challenge", ""),
-                        "selected_ideas":    st.session_state.get("selected_ideas", []),
-                        "final_reflection":  st.session_state.get("final_reflection", ""),
-                        "participant_risk":  st.session_state.get("participant_risk", ""),
-                    }
-                    # Generate synthesis (Executive Summary, Evidence Gained,
-                    # Current State of Understanding, Edge of Understanding)
                     synthesis_prompt = build_report_synthesis_prompt(session_data)
                     synthesis_text = generate_ai_response(synthesis_prompt)
                     st.session_state["_synthesis_text"] = synthesis_text
