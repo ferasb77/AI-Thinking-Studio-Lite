@@ -357,3 +357,192 @@ Exactly 3 questions the participant likely cannot yet answer with confidence bef
 
 Do not recommend whether to proceed. The participant retains full judgment.
 """
+
+
+def build_report_synthesis_prompt(session_data: dict) -> str:
+    """
+    Report Synthesis: Generates content for four closing PDF sections.
+
+    Called once at PDF export time with the full expedition data.
+    Returns structured content for:
+    1. Executive Summary
+    2. Evidence Gained
+    3. Current State of Understanding
+    4. The Edge of Understanding
+
+    Output must be in strict markdown format with ## section headers
+    so the PDF builder can parse and route each section correctly.
+    """
+
+    setup         = session_data.get("expedition_setup", {})
+    mirror        = session_data.get("mirror_output", "")
+    human         = session_data.get("human_output", "")
+    possibility   = session_data.get("possibility_output", "")
+    battlefield   = session_data.get("battlefield_output", "")
+    future        = session_data.get("future_output", "")
+    revised       = session_data.get("revised_challenge", "")
+    selected      = session_data.get("selected_ideas", [])
+    reflection    = session_data.get("final_reflection", "")
+    participant_risk = session_data.get("participant_risk", "")
+
+    selected_text = "\n".join(f"- {i}" for i in selected) if selected else "None selected."
+
+    return f"""
+You are synthesizing the outputs of a completed AI Thinking Studio™ Thinking Expedition.
+Your role is to document how understanding evolved — not to recommend actions or declare conclusions.
+
+CRITICAL DOCTRINE:
+- Do NOT recommend any course of action.
+- Do NOT suggest what the participant should do next.
+- Do NOT evaluate whether the ideas were good or bad.
+- Do NOT produce a consulting deliverable.
+- Your sole purpose is to make the evolution and current limits of understanding visible.
+- Use clear, direct language. Avoid jargon and filler.
+- Write in third person where referring to the participant ("the participant"), first person plural where describing shared examination ("what emerged").
+- Every section must be specific to this expedition — no generic statements that could apply to any challenge.
+
+---
+
+## EXPEDITION DATA
+
+**Challenge Title:** {setup.get("challenge_title", "")}
+
+**Original Challenge Statement:**
+{setup.get("challenge_statement", "")}
+
+**Context & Background:**
+{setup.get("context_background", "")}
+
+**Who is Affected:**
+{setup.get("who_is_affected", "")}
+
+**Currently Being Considered:**
+{setup.get("current_consideration", "")}
+
+**Revised Challenge Statement:**
+{revised if revised else "Not revised during expedition."}
+
+**Selected Ideas for Stress-Testing:**
+{selected_text}
+
+**Participant's Pre-Battlefield Risk Identification:**
+{participant_risk if participant_risk else "Not recorded."}
+
+**Participant's Final Reflection:**
+{reflection if reflection else "Not recorded."}
+
+---
+
+## ROOM OUTPUTS (read carefully — your synthesis must be grounded in these)
+
+### Mirror Room Output:
+{mirror if mirror else "Not completed."}
+
+### Human Room Output:
+{human if human else "Not completed."}
+
+### Possibility Room Output:
+{possibility if possibility else "Not completed."}
+
+### Battlefield Room Output:
+{battlefield if battlefield else "Not completed."}
+
+### Future Room Output:
+{future if future else "Not completed."}
+
+---
+
+## YOUR TASK
+
+Generate content for exactly four sections, using these exact ## headers.
+Each section must be grounded in the actual expedition outputs above.
+Do not invent content that was not surfaced during the expedition.
+
+---
+
+## EXECUTIVE SUMMARY
+
+Write a concise summary (6–8 sentences maximum) covering:
+1. The challenge that was examined — stated plainly.
+2. How the challenge was reframed during the expedition — be specific about what shifted.
+3. The most significant blind spot that emerged — quote or closely paraphrase from the Mirror Room.
+4. The most important assumption that was examined in the Battlefield Room.
+5. The major questions that remain unresolved at the end of the expedition.
+6. One sentence on how understanding shifted from beginning to end.
+
+Do not recommend action. Do not conclude. Summarize the examination.
+
+---
+
+## EVIDENCE GAINED
+
+Document how understanding evolved. Use exactly 3 Before/After pairs.
+Each pair must be specific to this expedition — not generic.
+
+Format each pair exactly as:
+
+BEFORE: [What was believed or assumed at the start — specific to this challenge]
+AFTER: [What is now understood or recognized — specific to what the expedition surfaced]
+
+The "After" must never be a conclusion or recommendation.
+It must describe a change in the quality or depth of understanding.
+"We now recognize that we lack sufficient evidence to conclude X" is correct.
+"We should therefore do Y" is wrong.
+
+---
+
+## CURRENT STATE OF UNDERSTANDING
+
+Answer each of these four questions with 2–3 specific points drawn from the expedition.
+Do not pad. Do not generalize. Every point must be traceable to something surfaced in the rooms.
+
+### What is now understood with greater confidence?
+[2–3 points — things the expedition made clearer, not conclusions]
+
+### Which assumptions have been meaningfully examined?
+[2–3 assumptions that were actively surfaced and stress-tested during the expedition]
+
+### Which uncertainties still remain?
+[2–3 specific uncertainties that the expedition surfaced but did not resolve]
+
+### Where would additional examination produce the greatest value?
+[2–3 specific areas — not recommendations, but directions where further examination matters]
+
+Then add this checklist exactly as formatted below, marking only items that genuinely occurred:
+
+EXAMINATION INDICATORS:
+✓ Challenge meaningfully reframed
+✓ Multiple stakeholder perspectives examined
+✓ Hidden assumptions surfaced
+✓ Alternative interpretations explored
+✓ Future consequences considered
+✓ Areas of uncertainty explicitly acknowledged
+
+If any item did NOT genuinely occur in this expedition, mark it with ○ instead of ✓.
+Do not mark everything ✓ to appear thorough. Accuracy matters more than completeness.
+
+---
+
+## THE EDGE OF UNDERSTANDING
+
+This is the final page. It defines the current boundary of understanding.
+Write 2–4 sentences for each of the four reflections below.
+Be precise. Be honest. Resist the urge to resolve uncertainty.
+
+### What is now understood?
+The most important insights that emerged through examination — stated with appropriate tentativeness.
+
+### What remains uncertain?
+The questions that still cannot be answered with confidence after the expedition.
+
+### What should not yet be concluded?
+Areas where premature certainty would be inappropriate because the available evidence remains incomplete.
+Name specific conclusions that are tempting but not yet warranted.
+
+### What evidence would most improve understanding?
+The single most valuable piece of information, observation, experiment, or conversation that would deepen examination if it became available. One specific answer only — not a list.
+
+---
+
+End your response after The Edge of Understanding. Do not add summaries, sign-offs, or meta-commentary.
+"""

@@ -9,7 +9,7 @@ import re
 from datetime import datetime
 
 from reportlab.lib import colors
-from reportlab.lib.enums import TA_CENTER
+from reportlab.lib.enums import TA_CENTER, TA_LEFT
 from reportlab.lib.pagesizes import A4
 from reportlab.lib.styles import ParagraphStyle
 from reportlab.lib.units import mm
@@ -447,11 +447,11 @@ def _thinking_journey_page(session_data: dict, styles: dict) -> list:
     def node(label: str, content: str, label_color=GRAY_500,
              text_color=GRAY_800, bg=None):
         lp = ParagraphStyle(
-            "nl", fontName="Helvetica-Bold", fontSize=7, leading=10,
+            f"nl", fontName="Helvetica-Bold", fontSize=7, leading=10,
             textColor=label_color, spaceAfter=3,
         )
         tp = ParagraphStyle(
-            "nt", fontName="Helvetica", fontSize=10, leading=15,
+            f"nt", fontName="Helvetica", fontSize=10, leading=15,
             textColor=text_color, spaceAfter=0,
         )
         bg_color = bg or colors.HexColor("#F7F9FB")
@@ -534,9 +534,298 @@ def _thinking_journey_page(session_data: dict, styles: dict) -> list:
     return story
 
 
+# ── Synthesis section renderers ───────────────────────────────────────────────
+
+def _parse_synthesis(raw: str) -> dict:
+    """
+    Parse the AI synthesis output into four named sections.
+    Splits on ## headers and returns a dict keyed by section name.
+    """
+    sections = {}
+    current_key = None
+    current_lines = []
+
+    for line in raw.split("\n"):
+        stripped = line.strip()
+        if stripped.startswith("## "):
+            if current_key is not None:
+                sections[current_key] = "\n".join(current_lines).strip()
+            current_key = stripped[3:].strip().upper()
+            current_lines = []
+        else:
+            current_lines.append(line)
+
+    if current_key is not None:
+        sections[current_key] = "\n".join(current_lines).strip()
+
+    return sections
+
+
+def _synthesis_page_title(title: str, subtitle: str, styles: dict,
+                           accent=None) -> list:
+    """Dark band title for synthesis pages."""
+    accent = accent or ACCENT
+    title_p = ParagraphStyle(
+        "syn_title", fontName="Helvetica-Bold", fontSize=20, leading=26,
+        textColor=WHITE, spaceAfter=3,
+    )
+    sub_p = ParagraphStyle(
+        "syn_sub", fontName="Helvetica", fontSize=9, leading=13,
+        textColor=GRAY_300, spaceAfter=0,
+    )
+    t = Table(
+        [[Paragraph(title, title_p)], [Paragraph(subtitle, sub_p)]],
+        colWidths=[CONTENT_W],
+    )
+    t.setStyle(TableStyle([
+        ("BACKGROUND",   (0, 0), (-1, -1), INK),
+        ("LEFTPADDING",  (0, 0), (-1, -1), 0),
+        ("RIGHTPADDING", (0, 0), (-1, -1), 0),
+        ("TOPPADDING",   (0, 0), (-1, -1), 0),
+        ("BOTTOMPADDING",(0, 0), (-1, -1), 8),
+        ("LINEBELOW",    (0, -1), (-1, -1), 1.5, accent),
+    ]))
+    return [t, Spacer(1, 16)]
+
+
+def _render_executive_summary(text: str, styles: dict) -> list:
+    """Render the Executive Summary section."""
+    story = []
+    story.extend(_synthesis_page_title(
+        "Executive Summary",
+        "The examination at a glance — not a recommendation, a record.",
+        styles, ACCENT,
+    ))
+
+    body_p = ParagraphStyle(
+        "exec_body", fontName="Helvetica", fontSize=10, leading=16,
+        textColor=GRAY_800, spaceAfter=6,
+    )
+
+    for line in text.split("\n"):
+        s = line.strip()
+        if not s or _is_suppressed(s):
+            story.append(Spacer(1, 3))
+            continue
+        if s.startswith("#"):
+            continue  # skip any sub-headers in the summary
+        if s.startswith(("- ", "• ", "* ")):
+            story.append(Paragraph(
+                f"–\u2002{_convert_inline_bold(s[2:])}",
+                ParagraphStyle("exec_bull", parent=body_p, leftIndent=14),
+            ))
+        else:
+            story.append(Paragraph(_convert_inline_bold(s), body_p))
+
+    return story
+
+
+def _render_evidence_gained(text: str, styles: dict) -> list:
+    """Render the Evidence Gained section with Before/After panels."""
+    story = []
+    story.extend(_synthesis_page_title(
+        "Evidence Gained",
+        "How understanding evolved — not what to do, but what is now visible.",
+        styles, TEAL,
+    ))
+
+    before_p = ParagraphStyle(
+        "eg_label_b", fontName="Helvetica-Bold", fontSize=7.5, leading=11,
+        textColor=GRAY_500, spaceAfter=3,
+    )
+    after_p = ParagraphStyle(
+        "eg_label_a", fontName="Helvetica-Bold", fontSize=7.5, leading=11,
+        textColor=TEAL, spaceAfter=3,
+    )
+    before_text_p = ParagraphStyle(
+        "eg_before", fontName="Helvetica-Oblique", fontSize=10, leading=15,
+        textColor=GRAY_800, spaceAfter=0,
+    )
+    after_text_p = ParagraphStyle(
+        "eg_after", fontName="Helvetica", fontSize=10, leading=15,
+        textColor=GRAY_800, spaceAfter=0,
+    )
+
+    # Parse BEFORE:/AFTER: pairs
+    pairs = []
+    current_before = ""
+    current_after  = ""
+
+    for line in text.split("\n"):
+        s = line.strip()
+        if s.upper().startswith("BEFORE:"):
+            if current_before and current_after:
+                pairs.append((current_before, current_after))
+                current_after = ""
+            current_before = s.split(":", 1)[-1].strip()
+        elif s.upper().startswith("AFTER:"):
+            current_after = s.split(":", 1)[-1].strip()
+
+    if current_before and current_after:
+        pairs.append((current_before, current_after))
+
+    # If AI didn't follow format, fall back to body text
+    if not pairs:
+        for line in text.split("\n"):
+            s = line.strip()
+            if s:
+                story.append(Paragraph(_convert_inline_bold(s), styles["body"]))
+        return story
+
+    for before, after in pairs:
+        col_w = CONTENT_W / 2 - 4 * mm
+        before_cell = [
+            Paragraph("BEFORE", before_p),
+            Paragraph(before, before_text_p),
+        ]
+        after_cell = [
+            Paragraph("AFTER", after_p),
+            Paragraph(after, after_text_p),
+        ]
+        t = Table([[before_cell, after_cell]], colWidths=[col_w, col_w])
+        t.setStyle(TableStyle([
+            ("VALIGN",       (0, 0), (-1, -1), "TOP"),
+            ("LEFTPADDING",  (0, 0), (-1, -1), 14),
+            ("RIGHTPADDING", (0, 0), (-1, -1), 14),
+            ("TOPPADDING",   (0, 0), (-1, -1), 10),
+            ("BOTTOMPADDING",(0, 0), (-1, -1), 10),
+            ("BACKGROUND",   (0, 0), (0, -1),  colors.HexColor("#F5F7FA")),
+            ("BACKGROUND",   (1, 0), (1, -1),  colors.HexColor("#EDF6FA")),
+            ("LINEBEFORE",   (0, 0), (0, -1),  3, GRAY_500),
+            ("LINEBEFORE",   (1, 0), (1, -1),  3, TEAL),
+            ("LINEBELOW",    (0, 0), (-1, -1), 0.3, RULE),
+        ]))
+        story.append(KeepTogether([t]))
+        story.append(Spacer(1, 10))
+
+    return story
+
+
+def _render_current_state(text: str, styles: dict) -> list:
+    """Render the Current State of Understanding section."""
+    story = []
+    story.extend(_synthesis_page_title(
+        "Current State of Understanding",
+        "What the expedition made clearer — and what it did not resolve.",
+        styles, GOLD,
+    ))
+
+    sub_p = ParagraphStyle(
+        "cs_sub", fontName="Helvetica-Bold", fontSize=10, leading=14,
+        textColor=GOLD, spaceBefore=12, spaceAfter=4,
+    )
+    body_p = styles["body"]
+    bullet_p = ParagraphStyle(
+        "cs_bull", parent=body_p, leftIndent=14, spaceAfter=3,
+    )
+    check_p = ParagraphStyle(
+        "cs_check", fontName="Helvetica", fontSize=9.5, leading=14,
+        textColor=GRAY_800, leftIndent=8, spaceAfter=3,
+    )
+    check_done_p = ParagraphStyle(
+        "cs_check_done", fontName="Helvetica-Bold", fontSize=9.5, leading=14,
+        textColor=GREEN, leftIndent=8, spaceAfter=3,
+    )
+
+    in_checklist = False
+
+    for line in text.split("\n"):
+        s = line.strip()
+        if not s or _is_suppressed(s):
+            story.append(Spacer(1, 3))
+            continue
+
+        # Detect checklist block
+        if "EXAMINATION INDICATORS" in s.upper():
+            in_checklist = True
+            story.append(Spacer(1, 10))
+            story.append(_rule(GOLD, thickness=0.3, sb=2, sa=6))
+            story.append(Paragraph(
+                "EXAMINATION INDICATORS",
+                ParagraphStyle("ci_hdr", fontName="Helvetica-Bold", fontSize=8,
+                               leading=12, textColor=GRAY_500, spaceAfter=6),
+            ))
+            continue
+
+        if in_checklist:
+            if s.startswith("✓"):
+                story.append(Paragraph(s, check_done_p))
+            elif s.startswith("○"):
+                story.append(Paragraph(s, check_p))
+            else:
+                in_checklist = False
+
+        if not in_checklist:
+            if s.startswith("### "):
+                story.append(Paragraph(s[4:], sub_p))
+            elif s.startswith("#"):
+                pass  # skip top-level headers already handled
+            elif s.startswith(("- ", "• ", "* ")):
+                story.append(Paragraph(
+                    f"–\u2002{_convert_inline_bold(s[2:])}", bullet_p
+                ))
+            else:
+                story.append(Paragraph(_convert_inline_bold(s), body_p))
+
+    return story
+
+
+def _render_edge_of_understanding(text: str, styles: dict) -> list:
+    """Render The Edge of Understanding — the final page."""
+    story = []
+    story.extend(_synthesis_page_title(
+        "The Edge of Understanding",
+        "Not a recommendation page. A definition of where understanding currently ends.",
+        styles, colors.HexColor("#8B6DB5"),
+    ))
+
+    sub_p = ParagraphStyle(
+        "eu_sub", fontName="Helvetica-Bold", fontSize=11, leading=15,
+        textColor=colors.HexColor("#8B6DB5"), spaceBefore=14, spaceAfter=5,
+    )
+    body_p = ParagraphStyle(
+        "eu_body", fontName="Helvetica", fontSize=10, leading=16,
+        textColor=GRAY_800, spaceAfter=5,
+    )
+    bullet_p = ParagraphStyle(
+        "eu_bull", parent=body_p, leftIndent=14, spaceAfter=3,
+    )
+
+    for line in text.split("\n"):
+        s = line.strip()
+        if not s or _is_suppressed(s):
+            story.append(Spacer(1, 3))
+            continue
+        if s.startswith("### "):
+            story.append(Paragraph(s[4:], sub_p))
+        elif s.startswith("#"):
+            pass
+        elif s.startswith(("- ", "• ", "* ")):
+            story.append(Paragraph(
+                f"–\u2002{_convert_inline_bold(s[2:])}", bullet_p
+            ))
+        else:
+            story.append(Paragraph(_convert_inline_bold(s), body_p))
+
+    # Closing doctrine line
+    story.append(Spacer(1, 20))
+    story.append(_rule(colors.HexColor("#8B6DB5"), thickness=0.8))
+    story.append(Spacer(1, 8))
+    story.append(Paragraph(
+        "The purpose of the expedition is not to produce certainty. "
+        "It is to make the current limits of understanding visible.",
+        ParagraphStyle(
+            "eu_close", fontName="Helvetica-Oblique", fontSize=10, leading=16,
+            textColor=colors.HexColor("#8B6DB5"), alignment=TA_CENTER,
+        ),
+    ))
+
+    return story
+
+
 # ── Main PDF builder ──────────────────────────────────────────────────────────
 
-def generate_pdf(session_data: dict) -> bytes:
+def generate_pdf(session_data: dict, synthesis_text: str = "") -> bytes:
     buffer   = io.BytesIO()
     setup    = session_data.get("expedition_setup", {})
     styles   = _styles()
@@ -665,6 +954,16 @@ def generate_pdf(session_data: dict) -> bytes:
 
     story.append(PageBreak())
 
+    # ── EXECUTIVE SUMMARY (AI-generated) ──────────────────────────────────────
+    if synthesis_text:
+        page_callbacks[3] = _interior_canvas
+        sections = _parse_synthesis(synthesis_text)
+        exec_text = sections.get("EXECUTIVE SUMMARY", "")
+        if exec_text:
+            story.append(Spacer(1, 4))
+            story.extend(_render_executive_summary(exec_text, styles))
+            story.append(PageBreak())
+
     # ── ROOM SECTIONS ─────────────────────────────────────────────────────────
     rooms = [
         ("mirror_output",      "Mirror Room",      "Assumption Inventory & Examination Gaps"),
@@ -674,26 +973,14 @@ def generate_pdf(session_data: dict) -> bytes:
         ("future_output",      "Future Room",      "How This Unfolds Over Time"),
     ]
 
-    page_counter = [3]
-    # Track actual page counts more carefully:
-    # First page of each room gets the header band.
-    # Continuation pages of the same room should use _interior_canvas.
-    # We assign the room callback only to the FIRST page of each room section,
-    # then use _interior_canvas for subsequent pages.
-    # Since we can't know exact page counts before build, we assign a range of 1
-    # for the header page and rely on the fallback _interior_canvas for the rest.
-    # The dispatch function handles unregistered pages via the else branch.
+    page_counter = [4 if synthesis_text else 3]
 
     for key, room_name, room_desc in rooms:
         content = session_data.get(key, "")
         room_cb = _room_canvas(room_name, room_desc)
-        # Only assign the room band callback to the FIRST page of this room.
-        # All subsequent pages fall through to _interior_canvas in dispatch.
         page_callbacks[page_counter[0]] = room_cb
-        # Advance counter conservatively — rooms rarely exceed 8 pages
         page_counter[0] += 8
 
-        # Top margin must clear the 28mm header band plus breathing room
         story.append(Spacer(1, 34 * mm))
 
         # Participant risk block (Battlefield only)
@@ -752,11 +1039,46 @@ def generate_pdf(session_data: dict) -> bytes:
             story.append(Paragraph(f"–\u2002{idea}", idea_p))
         story.append(PageBreak())
 
+    # ── EVIDENCE GAINED (AI-generated) ────────────────────────────────────────
+    if synthesis_text:
+        for p in range(page_counter[0], page_counter[0] + 4):
+            page_callbacks[p] = _interior_canvas
+        page_counter[0] += 4
+
+        evidence_text = sections.get("EVIDENCE GAINED", "")
+        if evidence_text:
+            story.append(Spacer(1, 4))
+            story.extend(_render_evidence_gained(evidence_text, styles))
+            story.append(PageBreak())
+
+        # ── CURRENT STATE OF UNDERSTANDING ────────────────────────────────────
+        for p in range(page_counter[0], page_counter[0] + 4):
+            page_callbacks[p] = _interior_canvas
+        page_counter[0] += 4
+
+        current_state_text = sections.get("CURRENT STATE OF UNDERSTANDING", "")
+        if current_state_text:
+            story.append(Spacer(1, 4))
+            story.extend(_render_current_state(current_state_text, styles))
+            story.append(PageBreak())
+
     # ── THINKING JOURNEY ──────────────────────────────────────────────────────
     for p in range(page_counter[0], page_counter[0] + 4):
         page_callbacks[p] = _interior_canvas
+    page_counter[0] += 4
 
     story.extend(_thinking_journey_page(session_data, styles))
+    story.append(PageBreak())
+
+    # ── THE EDGE OF UNDERSTANDING (AI-generated) ──────────────────────────────
+    if synthesis_text:
+        for p in range(page_counter[0], page_counter[0] + 3):
+            page_callbacks[p] = _interior_canvas
+
+        edge_text = sections.get("THE EDGE OF UNDERSTANDING", "")
+        if edge_text:
+            story.append(Spacer(1, 4))
+            story.extend(_render_edge_of_understanding(edge_text, styles))
 
     doc.build(story, onFirstPage=dispatch, onLaterPages=dispatch)
     buffer.seek(0)

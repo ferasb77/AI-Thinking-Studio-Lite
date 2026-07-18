@@ -20,7 +20,9 @@ from core.auth import (  # noqa: E402
 from core.state import (  # noqa: E402
     STEPS, STEP_ICONS, STEP_LABELS,
     init_state, navigate_to, get_expedition_data,
-    is_setup_complete, load_expedition_into_state, clear_expedition_state,
+    is_setup_complete, get_completion_status,
+    load_expedition_into_state, clear_expedition_state,
+    get_current_expedition_state,
 )
 from core.db import (  # noqa: E402
     get_user_expeditions, create_expedition, delete_expedition,
@@ -816,8 +818,9 @@ def page_summary_export():
     else:
         if st.button("Prepare PDF Export", key="prepare_pdf"):
             st.session_state.final_reflection = reflection.strip()
-            with st.spinner("Generating your Thinking Expedition summary…"):
+            with st.spinner("Generating synthesis — this takes a moment…"):
                 try:
+                    from core.prompts import build_report_synthesis_prompt
                     session_data = {
                         "expedition_setup":  st.session_state.expedition_setup,
                         "mirror_output":     st.session_state.get("mirror_output", ""),
@@ -830,7 +833,21 @@ def page_summary_export():
                         "final_reflection":  st.session_state.get("final_reflection", ""),
                         "participant_risk":  st.session_state.get("participant_risk", ""),
                     }
-                    st.session_state["_pdf_bytes"] = generate_pdf(session_data)
+                    # Generate synthesis (Executive Summary, Evidence Gained,
+                    # Current State of Understanding, Edge of Understanding)
+                    synthesis_prompt = build_report_synthesis_prompt(session_data)
+                    synthesis_text = generate_ai_response(synthesis_prompt)
+                    st.session_state["_synthesis_text"] = synthesis_text
+                except Exception as e:
+                    st.warning(f"Synthesis generation failed — PDF will be generated without it. ({e})")
+                    st.session_state["_synthesis_text"] = ""
+
+            with st.spinner("Building PDF…"):
+                try:
+                    st.session_state["_pdf_bytes"] = generate_pdf(
+                        session_data,
+                        synthesis_text=st.session_state.get("_synthesis_text", ""),
+                    )
                     st.success("PDF ready.")
                 except Exception as e:
                     st.error(f"PDF generation failed: {e}")
