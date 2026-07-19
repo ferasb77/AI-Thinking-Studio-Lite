@@ -7,22 +7,22 @@ Auth state is managed via the client's session methods.
 """
 
 import os
+
+import streamlit as st
 from dotenv import load_dotenv
 
 load_dotenv()
-
-_client = None
-
 
 def get_supabase():
     """
     Return the shared Supabase client instance.
     Initialises on first call, reuses on subsequent calls.
     """
-    global _client
-
-    if _client is not None:
-        return _client
+    # Streamlit module globals are shared across connected browser sessions.
+    # Keep the authenticated Supabase client inside the current user's session
+    # so one participant's access token can never be reused by another.
+    if "_supabase_client" in st.session_state:
+        return st.session_state._supabase_client
 
     try:
         from supabase import create_client
@@ -43,5 +43,10 @@ def get_supabase():
             "SUPABASE_KEY is not set. Please add it to your .env file."
         )
 
-    _client = create_client(url, key)
-    return _client
+    st.session_state._supabase_client = create_client(url, key)
+    return st.session_state._supabase_client
+
+
+def clear_supabase_client() -> None:
+    """Remove the Supabase client associated with the current browser session."""
+    st.session_state.pop("_supabase_client", None)

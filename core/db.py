@@ -12,6 +12,7 @@ Key design:
 """
 
 import json
+from datetime import datetime, timezone
 from typing import Optional
 from core.supabase_client import get_supabase
 
@@ -68,9 +69,16 @@ def update_expedition_title(expedition_id: str, title: str) -> None:
 
 
 def mark_expedition_complete(expedition_id: str) -> None:
-    """Mark an expedition as complete."""
+    """Mark an expedition complete; database validation enforces readiness."""
     sb = get_supabase()
     sb.table("expeditions").update({"status": "complete"}).eq("id", expedition_id).execute()
+
+
+def get_user_session_stats() -> list:
+    """Return aggregate session statistics for a Studio Administrator."""
+    sb = get_supabase()
+    result = sb.rpc("get_user_session_stats").execute()
+    return result.data or []
 
 
 def delete_expedition(expedition_id: str) -> None:
@@ -117,7 +125,8 @@ def save_expedition_field(expedition_id: str, key: str, value) -> None:
     ).execute()
 
     # Touch the parent expedition's updated_at
-    sb.table("expeditions").update({"updated_at": "NOW()"}).eq(
+    updated_at = datetime.now(timezone.utc).isoformat()
+    sb.table("expeditions").update({"updated_at": updated_at}).eq(
         "id", expedition_id
     ).execute()
 

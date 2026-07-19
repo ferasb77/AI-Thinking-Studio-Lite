@@ -10,6 +10,7 @@ and 'auth_expedition_id'.
 import streamlit as st
 from core.brand import BRAND_LINE, auth_brand_html
 from core.db import sign_in, sign_out, get_current_user
+from core.supabase_client import clear_supabase_client
 
 
 def init_auth_state():
@@ -18,6 +19,8 @@ def init_auth_state():
         st.session_state.auth_user = None
     if "auth_expedition_id" not in st.session_state:
         st.session_state.auth_expedition_id = None
+    if "dashboard_view" not in st.session_state:
+        st.session_state.dashboard_view = "sessions"
 
     # Attempt to restore session from Supabase on first load
     if st.session_state.auth_user is None:
@@ -41,6 +44,18 @@ def get_user_email() -> str:
     """Return the current user's email, or empty string."""
     user = st.session_state.get("auth_user")
     return str(user.email) if user else ""
+
+
+def get_user_role() -> str:
+    """Return the user's trusted application role from app metadata."""
+    user = st.session_state.get("auth_user")
+    metadata = getattr(user, "app_metadata", {}) or {} if user else {}
+    return str(metadata.get("studio_role", "participant"))
+
+
+def is_studio_admin() -> bool:
+    """Return True only for users assigned the Studio Administrator role."""
+    return get_user_role() == "admin"
 
 
 def render_auth_page():
@@ -122,8 +137,10 @@ def render_logout_button():
     )
     if st.button("Sign Out", key="sidebar_logout", use_container_width=True):
         sign_out()
+        clear_supabase_client()
         st.session_state.auth_user = None
         st.session_state.auth_expedition_id = None
+        st.session_state.dashboard_view = "sessions"
         # Clear expedition state
         for key in [
             "expedition_setup", "mirror_output", "human_output",

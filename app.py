@@ -16,7 +16,7 @@ from core.brand import (  # noqa: E402
 
 from core.auth import (  # noqa: E402
     init_auth_state, is_authenticated, get_user_id,
-    render_auth_page, render_logout_button,
+    is_studio_admin, render_auth_page, render_logout_button,
 )
 from core.state import (  # noqa: E402
     STEPS, STEP_ICONS, STEP_LABELS,
@@ -28,7 +28,7 @@ from core.state import (  # noqa: E402
 from core.db import (  # noqa: E402
     get_user_expeditions, create_expedition, delete_expedition,
     save_expedition_field, load_expedition_data, mark_expedition_complete,
-    update_expedition_title,
+    update_expedition_title, get_user_session_stats,
 )
 from core.prompts import (  # noqa: E402
     build_battlefield_prompt, build_future_prompt, build_human_prompt,
@@ -135,8 +135,16 @@ def render_sidebar():
                     unsafe_allow_html=True)
         if st.button("⊞  My Thinking Sessions", key="nav_dashboard"):
             st.session_state.auth_expedition_id = None
+            st.session_state.dashboard_view = "sessions"
             clear_expedition_state()
             st.rerun()
+
+        if is_studio_admin():
+            if st.button("◉  Studio Overview", key="nav_admin_dashboard"):
+                st.session_state.auth_expedition_id = None
+                st.session_state.dashboard_view = "admin"
+                clear_expedition_state()
+                st.rerun()
 
         st.markdown("""
             <hr style="border: none; border-top: 1px solid #292832; margin: 12px 12px;">
@@ -194,6 +202,7 @@ def page_dashboard():
                 try:
                     exp = create_expedition(user_id, new_title.strip())
                     st.session_state.auth_expedition_id = exp["id"]
+                    st.session_state.dashboard_view = "sessions"
                     clear_expedition_state()
                     # Pre-fill the challenge title
                     st.session_state.expedition_setup["challenge_title"] = new_title.strip()
@@ -264,6 +273,66 @@ def page_dashboard():
                         st.rerun()
                     except Exception as e:
                         st.error(f"Could not delete: {e}")
+
+
+def page_admin_dashboard():
+    """Render aggregate participation statistics for Studio Administrators."""
+    if not is_studio_admin():
+        st.error("Studio Administrator access is required.")
+        return
+
+    st.markdown("""
+        <div style="margin-bottom: 8px;">
+            <div style="font-family:'EMG Cormorant',serif;font-size:2rem;
+                        color:#EDEAE3;font-weight:500;">Studio Overview</div>
+            <div style="font-size:0.82rem;color:#918E86;margin-top:4px;">
+                Participation and completion statistics across the Studio.
+                Thinking Session content remains private.
+            </div>
+        </div>
+        <hr class="section-divider">
+    """, unsafe_allow_html=True)
+
+    try:
+        stats = get_user_session_stats()
+    except Exception as exc:
+        st.error(f"Could not load Studio statistics: {exc}")
+        return
+
+    total_users = len(stats)
+    total_sessions = sum(int(row.get("total_sessions", 0)) for row in stats)
+    completed_sessions = sum(int(row.get("completed_sessions", 0)) for row in stats)
+    completion_rate = (
+        round((completed_sessions / total_sessions) * 100)
+        if total_sessions else 0
+    )
+
+    col1, col2, col3, col4 = st.columns(4)
+    col1.metric("Registered users", total_users)
+    col2.metric("Total sessions", total_sessions)
+    col3.metric("Completed", completed_sessions)
+    col4.metric("Completion rate", f"{completion_rate}%")
+
+    rows = []
+    for row in stats:
+        completed = int(row.get("completed_sessions", 0))
+        total = int(row.get("total_sessions", 0))
+        last_completed = row.get("last_completed_at")
+        rows.append({
+            "User": row.get("email", ""),
+            "Completed": completed,
+            "In progress": int(row.get("in_progress_sessions", 0)),
+            "Total": total,
+            "Completion rate": f"{round((completed / total) * 100) if total else 0}%",
+            "Last completion": last_completed[:10] if last_completed else "—",
+        })
+
+    st.markdown("<hr class='section-divider'>", unsafe_allow_html=True)
+    st.dataframe(rows, use_container_width=True, hide_index=True)
+    st.caption(
+        "A session counts as complete only after all five Thinking Rooms and "
+        "the participant's final reflection are completed."
+    )
 
 
 # ── Room pages ─────────────────────────────────────────────────────────────────
@@ -741,14 +810,42 @@ def page_summary_export():
     if st.button("Save Reflection", key="save_reflection"):
         st.session_state.final_reflection = reflection.strip()
         autosave("final_reflection", reflection.strip())
-        # Mark expedition complete
+        st.success("Reflection saved.")
+
+    required_room_keys = [
+        "mirror_output",
+        "human_output",
+        "possibility_output",
+        "battlefield_output",
+        "future_output",
+    ]
+    rooms_ready = all(
+        bool(st.session_state.get(key, "").strip()) for key in required_room_keys
+    )
+    reflection_ready = bool(reflection.strip())
+    completion_ready = rooms_ready and reflection_ready
+
+    if not completion_ready:
+        st.caption(
+            "Complete all five Thinking Rooms and write your final reflection "
+            "to finish this Thinking Session."
+        )
+
+    if st.button(
+        "Complete Thinking Session",
+        key="complete_thinking_session",
+        type="primary",
+        disabled=not completion_ready,
+    ):
         exp_id = st.session_state.get("auth_expedition_id")
         if exp_id:
             try:
+                st.session_state.final_reflection = reflection.strip()
+                save_expedition_field(exp_id, "final_reflection", reflection.strip())
                 mark_expedition_complete(exp_id)
-            except Exception:
-                pass
-        st.success("Reflection saved.")
+                st.success("Thinking Session completed.")
+            except Exception as exc:
+                st.error(f"Could not complete the Thinking Session: {exc}")
 
     # ── PDF Export ────────────────────────────────────────────────────────────
     st.markdown("<hr class='section-divider'>", unsafe_allow_html=True)
@@ -860,7 +957,13 @@ def main():
     # ── No expedition selected → show dashboard ────────────────────────────────
     if not st.session_state.get("auth_expedition_id"):
         render_sidebar()
-        page_dashboard()
+        if (
+            st.session_state.get("dashboard_view") == "admin"
+            and is_studio_admin()
+        ):
+            page_admin_dashboard()
+        else:
+            page_dashboard()
         return
 
     # ── Expedition active → show rooms ─────────────────────────────────────────

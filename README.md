@@ -47,6 +47,8 @@ included in `assets/`. Visual tokens and product language are centralized in
 
 - Facilitator-provisioned authentication
 - Saved, multi-session work through Supabase
+- Private Studio Administrator participation dashboard
+- Strict completion tracking across all five rooms and final reflection
 - Structured AI examination across five rooms
 - Human reflection before and after AI-supported examination
 - Branded Thinking Record PDF export
@@ -77,6 +79,16 @@ included in `assets/`. Visual tokens and product language are centralized in
    ```bash
    streamlit run app.py
    ```
+
+### Updating an existing deployment
+
+Run `supabase_admin_dashboard_migration.sql` once in the existing Supabase
+project's SQL Editor, then deploy the updated application files. Sign out and
+sign back in as `info@enablemygrowth.com` to refresh the administrator role in
+the access token. The **Studio Overview** link will then appear in the sidebar.
+
+The administrator dashboard exposes account email addresses and aggregate
+participation counts only. Thinking Session titles and content remain private.
 
 ## Required environment variables
 
