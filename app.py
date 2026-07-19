@@ -16,7 +16,8 @@ from core.brand import (  # noqa: E402
 
 from core.auth import (  # noqa: E402
     init_auth_state, is_authenticated, get_user_id,
-    is_studio_admin, render_auth_page, render_logout_button,
+    is_studio_admin, must_change_password, render_auth_page,
+    render_logout_button, render_password_change_page,
 )
 from core.state import (  # noqa: E402
     STEPS, STEP_ICONS, STEP_LABELS,
@@ -145,6 +146,12 @@ def render_sidebar():
                 st.session_state.dashboard_view = "admin"
                 clear_expedition_state()
                 st.rerun()
+
+        if st.button("⌁  Change Password", key="nav_change_password"):
+            st.session_state.auth_expedition_id = None
+            st.session_state.dashboard_view = "password"
+            clear_expedition_state()
+            st.rerun()
 
         st.markdown("""
             <hr style="border: none; border-top: 1px solid #292832; margin: 12px 12px;">
@@ -954,10 +961,24 @@ def main():
         render_auth_page()
         return
 
+    # New participants cannot enter the Studio until the temporary password
+    # issued during provisioning has been replaced.
+    try:
+        password_change_is_required = must_change_password()
+    except Exception as exc:
+        st.error(f"Could not verify account security status: {exc}")
+        return
+
+    if password_change_is_required:
+        render_password_change_page(forced=True)
+        return
+
     # ── No expedition selected → show dashboard ────────────────────────────────
     if not st.session_state.get("auth_expedition_id"):
         render_sidebar()
-        if (
+        if st.session_state.get("dashboard_view") == "password":
+            render_password_change_page(forced=False)
+        elif (
             st.session_state.get("dashboard_view") == "admin"
             and is_studio_admin()
         ):

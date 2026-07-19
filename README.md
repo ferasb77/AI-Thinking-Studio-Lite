@@ -49,6 +49,8 @@ included in `assets/`. Visual tokens and product language are centralized in
 - Saved, multi-session work through Supabase
 - Private Studio Administrator participation dashboard
 - Strict completion tracking across all five rooms and final reflection
+- Mandatory first-login replacement of facilitator-issued temporary passwords
+- Voluntary password changes from the authenticated Studio
 - Structured AI examination across five rooms
 - Human reflection before and after AI-supported examination
 - Branded Thinking Record PDF export
@@ -82,8 +84,9 @@ included in `assets/`. Visual tokens and product language are centralized in
 
 ### Updating an existing deployment
 
-Run `supabase_admin_dashboard_migration.sql` once in the existing Supabase
-project's SQL Editor, then deploy the updated application files. Sign out and
+Run `supabase_admin_dashboard_migration.sql`, followed by
+`supabase_password_change_migration.sql`, once in the existing Supabase
+project's SQL Editor. Then deploy the updated application files. Sign out and
 sign back in as `info@enablemygrowth.com` to refresh the administrator role in
 the access token. The **Studio Overview** link will then appear in the sidebar.
 

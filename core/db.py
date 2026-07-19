@@ -242,3 +242,31 @@ def get_current_user():
         return result.user if result else None
     except Exception:
         return None
+
+
+# ── Password management ─────────────────────────────────────────────────────
+
+def get_my_password_state(user_id: str) -> dict:
+    """Return the current user's first-login password-change state."""
+    sb = get_supabase()
+    result = (
+        sb.table("user_security_state")
+        .select("must_change_password, password_changed_at")
+        .eq("user_id", user_id)
+        .limit(1)
+        .execute()
+    )
+    rows = result.data or []
+    return rows[0] if rows else {"must_change_password": False}
+
+
+def update_password(new_password: str) -> None:
+    """Update the authenticated user's Supabase password."""
+    sb = get_supabase()
+    sb.auth.update_user({"password": new_password})
+
+
+def confirm_password_changed() -> None:
+    """Clear the current user's mandatory first-login password-change flag."""
+    sb = get_supabase()
+    sb.rpc("complete_my_password_change").execute()

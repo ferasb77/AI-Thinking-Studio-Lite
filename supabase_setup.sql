@@ -28,6 +28,17 @@ CREATE TABLE IF NOT EXISTS expedition_data (
     UNIQUE (expedition_id, key)
 );
 
+-- ── Table: user_security_state ─────────────────────────────
+-- Newly provisioned accounts must replace their temporary password before
+-- entering the Studio. Passwords themselves remain exclusively in Auth.
+CREATE TABLE IF NOT EXISTS user_security_state (
+    user_id                 UUID PRIMARY KEY
+                                REFERENCES auth.users(id) ON DELETE CASCADE,
+    must_change_password    BOOLEAN NOT NULL DEFAULT TRUE,
+    password_changed_at     TIMESTAMPTZ,
+    created_at              TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
 -- ── Indexes ──────────────────────────────────────────────────
 CREATE INDEX IF NOT EXISTS idx_expeditions_user_id
     ON expeditions(user_id);
@@ -95,6 +106,7 @@ CREATE TRIGGER validate_expedition_completion
 -- ── Row Level Security ───────────────────────────────────────
 ALTER TABLE expeditions ENABLE ROW LEVEL SECURITY;
 ALTER TABLE expedition_data ENABLE ROW LEVEL SECURITY;
+ALTER TABLE user_security_state ENABLE ROW LEVEL SECURITY;
 
 -- Users can only see and modify their own expeditions
 CREATE POLICY "users_own_expeditions" ON expeditions
@@ -115,6 +127,86 @@ CREATE POLICY "users_own_expedition_data" ON expedition_data
             SELECT id FROM expeditions WHERE user_id = auth.uid()
         )
     );
+
+CREATE POLICY "users_read_own_security_state" ON user_security_state
+    FOR SELECT
+    TO authenticated
+    USING ((SELECT auth.uid()) = user_id);
+
+REVOKE ALL ON TABLE user_security_state FROM anon;
+REVOKE INSERT, UPDATE, DELETE ON TABLE user_security_state FROM authenticated;
+GRANT SELECT ON TABLE user_security_state TO authenticated;
+
+-- Existing accounts that have never signed in remain subject to the first-login
+-- password change. Established accounts retain their current passwords.
+INSERT INTO user_security_state (
+    user_id,
+    must_change_password,
+    password_changed_at
+)
+SELECT
+    id,
+    CASE
+        WHEN last_sign_in_at IS NULL
+             AND email <> 'info@enablemygrowth.com'
+        THEN TRUE
+        ELSE FALSE
+    END,
+    CASE WHEN last_sign_in_at IS NULL THEN NULL ELSE NOW() END
+FROM auth.users
+ON CONFLICT (user_id) DO NOTHING;
+
+CREATE OR REPLACE FUNCTION handle_new_user_security_state()
+RETURNS TRIGGER
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = ''
+AS $$
+BEGIN
+    INSERT INTO public.user_security_state (user_id, must_change_password)
+    VALUES (NEW.id, TRUE)
+    ON CONFLICT (user_id) DO NOTHING;
+    RETURN NEW;
+END;
+$$;
+
+REVOKE ALL ON FUNCTION handle_new_user_security_state() FROM PUBLIC;
+REVOKE ALL ON FUNCTION handle_new_user_security_state()
+FROM anon, authenticated;
+GRANT EXECUTE ON FUNCTION handle_new_user_security_state()
+TO supabase_auth_admin;
+
+CREATE TRIGGER create_user_security_state
+    AFTER INSERT ON auth.users
+    FOR EACH ROW EXECUTE FUNCTION handle_new_user_security_state();
+
+CREATE OR REPLACE FUNCTION public.complete_my_password_change()
+RETURNS VOID
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = ''
+AS $$
+BEGIN
+    IF auth.uid() IS NULL THEN
+        RAISE EXCEPTION 'Authentication is required'
+            USING ERRCODE = '42501';
+    END IF;
+
+    UPDATE public.user_security_state
+    SET must_change_password = FALSE,
+        password_changed_at = NOW()
+    WHERE user_id = auth.uid();
+
+    IF NOT FOUND THEN
+        RAISE EXCEPTION 'Account security state was not found';
+    END IF;
+END;
+$$;
+
+REVOKE ALL ON FUNCTION public.complete_my_password_change() FROM PUBLIC;
+REVOKE ALL ON FUNCTION public.complete_my_password_change() FROM anon;
+GRANT EXECUTE ON FUNCTION public.complete_my_password_change()
+TO authenticated;
 
 -- Administrator-only aggregate reporting. The function exposes counts and
 -- account emails, never Thinking Session titles or participant content.
