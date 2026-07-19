@@ -7,12 +7,16 @@ All auth state is stored in st.session_state under 'auth_user'
 and 'auth_expedition_id'.
 """
 
+import re
+
 import streamlit as st
 from core.brand import BRAND_LINE, auth_brand_html
 from core.db import (
     confirm_password_changed,
     get_current_user,
+    get_my_profile,
     get_my_password_state,
+    save_my_profile,
     sign_in,
     sign_out,
     update_password,
@@ -30,6 +34,10 @@ def init_auth_state():
         st.session_state.dashboard_view = "sessions"
     if "password_change_required" not in st.session_state:
         st.session_state.password_change_required = None
+    if "profile_complete" not in st.session_state:
+        st.session_state.profile_complete = None
+    if "user_profile" not in st.session_state:
+        st.session_state.user_profile = None
 
     # Attempt to restore session from Supabase on first load
     if st.session_state.auth_user is None:
@@ -81,6 +89,111 @@ def must_change_password() -> bool:
     required = bool(state.get("must_change_password", False))
     st.session_state.password_change_required = required
     return required
+
+
+def is_profile_complete() -> bool:
+    """Return whether the current user has completed required profile fields."""
+    cached = st.session_state.get("profile_complete")
+    if cached is not None:
+        return bool(cached)
+
+    profile = get_my_profile(get_user_id())
+    st.session_state.user_profile = profile
+    complete = bool(profile.get("profile_completed_at"))
+    st.session_state.profile_complete = complete
+    return complete
+
+
+def _normalize_phone_number(phone_number: str) -> str:
+    """Remove common display separators while retaining the country-code plus."""
+    return re.sub(r"[\s().-]", "", phone_number.strip())
+
+
+def render_profile_page(forced: bool = False) -> None:
+    """Render mandatory onboarding or voluntary profile editing."""
+    profile = st.session_state.get("user_profile")
+    if profile is None:
+        profile = get_my_profile(get_user_id())
+        st.session_state.user_profile = profile
+
+    if forced:
+        st.markdown(auth_brand_html(), unsafe_allow_html=True)
+
+    title = "Complete Your Profile" if forced else "My Profile"
+    introduction = (
+        "Tell us who you are before entering the Studio. These details support "
+        "workshop administration and will not appear in your Thinking Record."
+        if forced
+        else "Review or update your Studio profile information."
+    )
+
+    col1, col2, col3 = st.columns([1, 2, 1])
+    with col2:
+        st.markdown(f"## {title}")
+        st.write(introduction)
+
+        with st.form("profile_form"):
+            full_name = st.text_input(
+                "Full name",
+                value=profile.get("full_name") or "",
+                placeholder="Your full name",
+            )
+            phone_number = st.text_input(
+                "Phone number",
+                value=profile.get("phone_number") or "",
+                placeholder="+961...",
+                help="Include the international country code.",
+            )
+            company_name = st.text_input(
+                "Company or organization",
+                value=profile.get("company_name") or "",
+                placeholder="Your company or organization",
+            )
+            submitted = st.form_submit_button(
+                "Save Profile",
+                type="primary",
+                use_container_width=True,
+            )
+
+        if submitted:
+            clean_name = full_name.strip()
+            clean_phone = _normalize_phone_number(phone_number)
+            clean_company = company_name.strip()
+
+            if len(clean_name) < 2:
+                st.error("Enter your full name.")
+            elif not re.fullmatch(r"\+[1-9]\d{7,14}", clean_phone):
+                st.error(
+                    "Enter a valid phone number with its international country "
+                    "code, for example +961..."
+                )
+            elif len(clean_company) < 2:
+                st.error("Enter your company or organization name.")
+            else:
+                try:
+                    saved = save_my_profile(
+                        get_user_id(),
+                        clean_name,
+                        clean_phone,
+                        clean_company,
+                    )
+                    st.session_state.user_profile = saved
+                    st.session_state.profile_complete = True
+                    st.session_state.dashboard_view = "sessions"
+                    st.success("Your profile has been saved.")
+                    st.rerun()
+                except Exception as exc:
+                    st.error(f"Could not save your profile: {exc}")
+
+        if forced:
+            st.markdown("<br>", unsafe_allow_html=True)
+            if st.button("Sign Out", key="profile_onboarding_signout", use_container_width=True):
+                sign_out()
+                clear_supabase_client()
+                st.session_state.auth_user = None
+                st.session_state.profile_complete = None
+                st.session_state.user_profile = None
+                st.rerun()
 
 
 def _password_validation_error(password: str) -> str:
@@ -240,6 +353,8 @@ def _render_login_form():
             else:
                 st.session_state.auth_user = result["user"]
                 st.session_state.password_change_required = None
+                st.session_state.profile_complete = None
+                st.session_state.user_profile = None
                 st.rerun()
 
 
@@ -262,6 +377,8 @@ def render_logout_button():
         st.session_state.auth_expedition_id = None
         st.session_state.dashboard_view = "sessions"
         st.session_state.password_change_required = None
+        st.session_state.profile_complete = None
+        st.session_state.user_profile = None
         # Clear expedition state
         for key in [
             "expedition_setup", "mirror_output", "human_output",

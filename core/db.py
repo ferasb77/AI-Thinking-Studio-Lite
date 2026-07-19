@@ -270,3 +270,42 @@ def confirm_password_changed() -> None:
     """Clear the current user's mandatory first-login password-change flag."""
     sb = get_supabase()
     sb.rpc("complete_my_password_change").execute()
+
+
+# ── User profiles ────────────────────────────────────────────────────────────
+
+def get_my_profile(user_id: str) -> dict:
+    """Return the current user's Studio profile, if present."""
+    sb = get_supabase()
+    result = (
+        sb.table("profiles")
+        .select(
+            "user_id, full_name, phone_number, company_name, "
+            "profile_completed_at"
+        )
+        .eq("user_id", user_id)
+        .limit(1)
+        .execute()
+    )
+    rows = result.data or []
+    return rows[0] if rows else {}
+
+
+def save_my_profile(
+    user_id: str,
+    full_name: str,
+    phone_number: str,
+    company_name: str,
+) -> dict:
+    """Create or update the authenticated user's Studio profile."""
+    sb = get_supabase()
+    result = sb.table("profiles").upsert(
+        {
+            "user_id": user_id,
+            "full_name": full_name,
+            "phone_number": phone_number,
+            "company_name": company_name,
+        },
+        on_conflict="user_id",
+    ).execute()
+    return result.data[0] if result.data else {}

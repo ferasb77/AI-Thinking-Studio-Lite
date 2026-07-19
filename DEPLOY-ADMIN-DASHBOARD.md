@@ -8,7 +8,9 @@
 4. Run the query once.
 5. Create another query and run the complete contents of
    `supabase_password_change_migration.sql` once.
-6. Confirm that both queries complete without an error.
+6. Create a third query and run the complete contents of
+   `supabase_profile_onboarding_migration.sql` once.
+7. Confirm that all three queries complete without an error.
 
 The migration assigns the Studio Administrator role to
 `info@enablemygrowth.com`. It also adds the strict completion rule and the
@@ -17,6 +19,11 @@ administrator-only statistics function.
 The password migration flags every account created afterward for a mandatory
 first-login password change. It also flags existing provisioned accounts that
 have never signed in; established users are left unchanged.
+
+The profile migration requires first-time users to provide their full name,
+international phone number, and company or organization before entering the
+Studio. Established users are not blocked, and every user can later update the
+information through **My Profile**.
 
 ## 2. Deploy the application
 
@@ -53,8 +60,13 @@ new access token.
   login, the participant must see **Create Your Private Password** and must not
   be able to enter the Studio first.
 - After changing it, sign in with the new password and confirm that the Studio
-  opens normally.
+  opens the required profile page.
+- Complete the full name, international phone number, and organization fields;
+  confirm that the Studio opens only after all three are valid.
 - Select **Change Password** in the sidebar and verify the voluntary flow.
+- Select **My Profile** and verify that profile changes are saved.
+- In **Studio Overview**, verify that name, email, phone, company, and session
+  counts appear without exposing Thinking Session content.
 
 ## Supabase password policy
 

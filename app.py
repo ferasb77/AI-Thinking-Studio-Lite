@@ -16,8 +16,9 @@ from core.brand import (  # noqa: E402
 
 from core.auth import (  # noqa: E402
     init_auth_state, is_authenticated, get_user_id,
-    is_studio_admin, must_change_password, render_auth_page,
-    render_logout_button, render_password_change_page,
+    is_profile_complete, is_studio_admin, must_change_password,
+    render_auth_page, render_logout_button, render_password_change_page,
+    render_profile_page,
 )
 from core.state import (  # noqa: E402
     STEPS, STEP_ICONS, STEP_LABELS,
@@ -150,6 +151,12 @@ def render_sidebar():
         if st.button("⌁  Change Password", key="nav_change_password"):
             st.session_state.auth_expedition_id = None
             st.session_state.dashboard_view = "password"
+            clear_expedition_state()
+            st.rerun()
+
+        if st.button("◇  My Profile", key="nav_profile"):
+            st.session_state.auth_expedition_id = None
+            st.session_state.dashboard_view = "profile"
             clear_expedition_state()
             st.rerun()
 
@@ -326,7 +333,10 @@ def page_admin_dashboard():
         total = int(row.get("total_sessions", 0))
         last_completed = row.get("last_completed_at")
         rows.append({
-            "User": row.get("email", ""),
+            "Name": row.get("full_name") or "—",
+            "Email": row.get("email", ""),
+            "Phone": row.get("phone_number") or "—",
+            "Company": row.get("company_name") or "—",
             "Completed": completed,
             "In progress": int(row.get("in_progress_sessions", 0)),
             "Total": total,
@@ -973,11 +983,23 @@ def main():
         render_password_change_page(forced=True)
         return
 
+    try:
+        profile_is_complete = is_profile_complete()
+    except Exception as exc:
+        st.error(f"Could not verify profile status: {exc}")
+        return
+
+    if not profile_is_complete:
+        render_profile_page(forced=True)
+        return
+
     # ── No expedition selected → show dashboard ────────────────────────────────
     if not st.session_state.get("auth_expedition_id"):
         render_sidebar()
         if st.session_state.get("dashboard_view") == "password":
             render_password_change_page(forced=False)
+        elif st.session_state.get("dashboard_view") == "profile":
+            render_profile_page(forced=False)
         elif (
             st.session_state.get("dashboard_view") == "admin"
             and is_studio_admin()
