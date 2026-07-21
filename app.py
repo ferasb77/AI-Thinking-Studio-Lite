@@ -968,7 +968,12 @@ PAGE_MAP = {
 def main():
     # ── Auth gate ──────────────────────────────────────────────────────────────
     if not is_authenticated():
-        render_auth_page()
+        # Check for invite token before showing login
+        token_hash, token_type = detect_invite_token()
+        if token_hash and token_type in ("invite", "recovery", "email"):
+            render_set_password_page(token_hash, token_type)
+        else:
+            render_auth_page()
         return
 
     # New participants cannot enter the Studio until the temporary password
