@@ -146,6 +146,13 @@ def _verify_token_and_set_password(token_hash: str, token_type: str,
         if not update_result or not update_result.user:
             return {"user": None, "error": "Could not set password. Please try again."}
 
+        # Clear the must_change_password flag so the user isn't prompted again
+        try:
+            from core.db import confirm_password_changed
+            confirm_password_changed()
+        except Exception:
+            pass  # Non-fatal — user can change password manually if needed
+
         return {"user": update_result.user, "error": None}
 
     except Exception as e:
