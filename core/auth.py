@@ -147,11 +147,12 @@ def _verify_token_and_set_password(token_hash: str, token_type: str,
             return {"user": None, "error": "Could not set password. Please try again."}
 
         # The invitation password is the user's first permanent password, so
-        # clear the first-login flag immediately after setting it. The RPC uses
-        # the authenticated session established by verify_otp() above.
+        # clear the first-login flag immediately after setting it. Pass the
+        # same client so the RPC receives the session established by
+        # verify_otp() above.
         try:
             from core.db import confirm_password_changed
-            confirm_password_changed()
+            confirm_password_changed(sb)
         except Exception:
             pass  # Non-fatal — user can change password on next login if needed
 

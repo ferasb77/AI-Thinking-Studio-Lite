@@ -268,9 +268,14 @@ def update_password(new_password: str) -> None:
     sb.auth.update_user({"password": new_password})
 
 
-def confirm_password_changed() -> None:
-    """Clear the current user's mandatory first-login password-change flag."""
-    sb = get_supabase()
+def confirm_password_changed(sb=None) -> None:
+    """Clear the authenticated user's mandatory password-change flag.
+
+    An existing client can be supplied when authentication was established
+    within the current operation, such as while accepting an invitation.
+    """
+    if sb is None:
+        sb = get_supabase()
     sb.rpc("complete_my_password_change").execute()
 
 
