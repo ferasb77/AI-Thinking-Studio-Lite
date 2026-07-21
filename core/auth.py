@@ -1,27 +1,15 @@
 """
 core/auth.py
-Authentication UI components for AI Thinking Studio™.
+Authentication UI for AI Thinking Studio™ Lite.
 
-Renders login/register forms and handles session management.
-All auth state is stored in st.session_state under 'auth_user'
-and 'auth_expedition_id'.
+Handles:
+- Login form (email + password)
+- Invite token detection and password-set flow
+- Session management via Supabase
 """
 
-import re
-
 import streamlit as st
-from core.brand import BRAND_LINE, auth_brand_html
-from core.db import (
-    confirm_password_changed,
-    get_current_user,
-    get_my_profile,
-    get_my_password_state,
-    save_my_profile,
-    sign_in,
-    sign_out,
-    update_password,
-)
-from core.supabase_client import clear_supabase_client
+from core.db import sign_in, sign_out, get_current_user
 
 
 def init_auth_state():
@@ -30,16 +18,7 @@ def init_auth_state():
         st.session_state.auth_user = None
     if "auth_expedition_id" not in st.session_state:
         st.session_state.auth_expedition_id = None
-    if "dashboard_view" not in st.session_state:
-        st.session_state.dashboard_view = "sessions"
-    if "password_change_required" not in st.session_state:
-        st.session_state.password_change_required = None
-    if "profile_complete" not in st.session_state:
-        st.session_state.profile_complete = None
-    if "user_profile" not in st.session_state:
-        st.session_state.user_profile = None
 
-    # Attempt to restore session from Supabase on first load
     if st.session_state.auth_user is None:
         user = get_current_user()
         if user:
@@ -47,272 +26,172 @@ def init_auth_state():
 
 
 def is_authenticated() -> bool:
-    """Return True if a user is currently logged in."""
     return st.session_state.get("auth_user") is not None
 
 
 def get_user_id() -> str:
-    """Return the current user's ID, or empty string."""
     user = st.session_state.get("auth_user")
     return str(user.id) if user else ""
 
 
 def get_user_email() -> str:
-    """Return the current user's email, or empty string."""
     user = st.session_state.get("auth_user")
     return str(user.email) if user else ""
 
 
-def get_user_role() -> str:
-    """Return the user's trusted application role from app metadata."""
-    user = st.session_state.get("auth_user")
-    metadata = getattr(user, "app_metadata", {}) or {} if user else {}
-    return str(metadata.get("studio_role", "participant"))
+def detect_invite_token() -> tuple:
+    """
+    Check URL query params for a Supabase invite or recovery token.
+    Returns (token_hash, token_type) or ("", "").
+
+    Supabase sends invited users to:
+    https://studio.enablemygrowth.com/?token_hash=xxx&type=invite
+    """
+    params = st.query_params
+    token_hash = params.get("token_hash", "")
+    token_type = params.get("type", "")
+    return token_hash, token_type
 
 
-def is_studio_admin() -> bool:
-    """Return True only for users assigned the Studio Administrator role."""
-    return get_user_role() == "admin"
-
-
-def must_change_password() -> bool:
-    """Return whether this user must replace their temporary password."""
-    cached = st.session_state.get("password_change_required")
-    if cached is not None:
-        return bool(cached)
-
-    user_id = get_user_id()
-    if not user_id:
-        return False
-
-    state = get_my_password_state(user_id)
-    required = bool(state.get("must_change_password", False))
-    st.session_state.password_change_required = required
-    return required
-
-
-def is_profile_complete() -> bool:
-    """Return whether the current user has completed required profile fields."""
-    cached = st.session_state.get("profile_complete")
-    if cached is not None:
-        return bool(cached)
-
-    profile = get_my_profile(get_user_id())
-    st.session_state.user_profile = profile
-    complete = bool(profile.get("profile_completed_at"))
-    st.session_state.profile_complete = complete
-    return complete
-
-
-def _normalize_phone_number(phone_number: str) -> str:
-    """Remove common display separators while retaining the country-code plus."""
-    return re.sub(r"[\s().-]", "", phone_number.strip())
-
-
-def render_profile_page(forced: bool = False) -> None:
-    """Render mandatory onboarding or voluntary profile editing."""
-    profile = st.session_state.get("user_profile")
-    if profile is None:
-        profile = get_my_profile(get_user_id())
-        st.session_state.user_profile = profile
-
-    if forced:
-        st.markdown(auth_brand_html(), unsafe_allow_html=True)
-
-    title = "Complete Your Profile" if forced else "My Profile"
-    introduction = (
-        "Tell us who you are before entering the Studio. These details support "
-        "workshop administration and will not appear in your Thinking Record."
-        if forced
-        else "Review or update your Studio profile information."
+def render_set_password_page(token_hash: str, token_type: str):
+    """
+    Render the Set Password page for invited users.
+    Called when a valid invite token is detected in the URL.
+    """
+    st.markdown(
+        """
+        <div style="text-align: center; margin: 60px auto 32px auto;">
+            <div style="font-family: serif; font-size: 1.8rem; color: #A8C4E0;
+                        font-weight: 500; margin-bottom: 4px;">
+                AI Thinking Studio™ Lite
+            </div>
+            <div style="font-size: 0.8rem; color: #3A5A79; letter-spacing: 0.1em;
+                        text-transform: uppercase;">
+                Welcome — set your password to begin
+            </div>
+        </div>
+        """,
+        unsafe_allow_html=True,
     )
 
     col1, col2, col3 = st.columns([1, 2, 1])
     with col2:
-        st.markdown(f"## {title}")
-        st.write(introduction)
-
-        with st.form("profile_form"):
-            full_name = st.text_input(
-                "Full name",
-                value=profile.get("full_name") or "",
-                placeholder="Your full name",
-            )
-            phone_number = st.text_input(
-                "Phone number",
-                value=profile.get("phone_number") or "",
-                placeholder="+961...",
-                help="Include the international country code.",
-            )
-            company_name = st.text_input(
-                "Company or organization",
-                value=profile.get("company_name") or "",
-                placeholder="Your company or organization",
-            )
-            submitted = st.form_submit_button(
-                "Save Profile",
-                type="primary",
-                use_container_width=True,
-            )
-
-        if submitted:
-            clean_name = full_name.strip()
-            clean_phone = _normalize_phone_number(phone_number)
-            clean_company = company_name.strip()
-
-            if len(clean_name) < 2:
-                st.error("Enter your full name.")
-            elif not re.fullmatch(r"\+[1-9]\d{7,14}", clean_phone):
-                st.error(
-                    "Enter a valid phone number with its international country "
-                    "code, for example +961..."
-                )
-            elif len(clean_company) < 2:
-                st.error("Enter your company or organization name.")
-            else:
-                try:
-                    saved = save_my_profile(
-                        get_user_id(),
-                        clean_name,
-                        clean_phone,
-                        clean_company,
-                    )
-                    st.session_state.user_profile = saved
-                    st.session_state.profile_complete = True
-                    st.session_state.dashboard_view = "sessions"
-                    st.success("Your profile has been saved.")
-                    st.rerun()
-                except Exception as exc:
-                    st.error(f"Could not save your profile: {exc}")
-
-        if forced:
-            st.markdown("<br>", unsafe_allow_html=True)
-            if st.button("Sign Out", key="profile_onboarding_signout", use_container_width=True):
-                sign_out()
-                clear_supabase_client()
-                st.session_state.auth_user = None
-                st.session_state.profile_complete = None
-                st.session_state.user_profile = None
-                st.rerun()
-
-
-def _password_validation_error(password: str) -> str:
-    """Return a participant-facing password validation message, if any."""
-    if len(password) < 12:
-        return "Use at least 12 characters."
-    if not any(char.islower() for char in password):
-        return "Include at least one lowercase letter."
-    if not any(char.isupper() for char in password):
-        return "Include at least one uppercase letter."
-    if not any(char.isdigit() for char in password):
-        return "Include at least one number."
-    if not any(not char.isalnum() for char in password):
-        return "Include at least one symbol."
-    return ""
-
-
-def render_password_change_page(forced: bool = False) -> None:
-    """Render the mandatory or voluntary password-change experience."""
-    title = "Create Your Private Password" if forced else "Change Password"
-    introduction = (
-        "You signed in with a temporary password. Before entering the Studio, "
-        "replace it with a private password known only to you."
-        if forced
-        else "Replace your current password with a new private password."
-    )
-
-    if forced:
-        st.markdown(auth_brand_html(), unsafe_allow_html=True)
-
-    col1, col2, col3 = st.columns([1, 2, 1])
-    with col2:
-        st.markdown(f"## {title}")
-        st.write(introduction)
-        st.caption(
-            "Use at least 12 characters, including uppercase and lowercase "
-            "letters, a number, and a symbol."
+        st.markdown(
+            """
+            <div style="background: #0F1B2D; border: 1px solid #2A4A6E;
+                        border-radius: 8px; padding: 28px 32px; margin-bottom: 20px;">
+                <div style="font-size: 0.88rem; color: #8899AA; line-height: 1.7;">
+                    You have been invited to AI Thinking Studio™ Lite.<br>
+                    Choose a password to activate your account.
+                </div>
+            </div>
+            """,
+            unsafe_allow_html=True,
         )
 
-        with st.form("password_change_form"):
-            current_password = ""
-            if not forced:
-                current_password = st.text_input(
-                    "Current password",
-                    type="password",
-                )
-            new_password = st.text_input(
-                "New password",
+        with st.form("set_password_form"):
+            password = st.text_input(
+                "New Password",
                 type="password",
+                placeholder="Choose a password (min. 8 characters)",
             )
-            confirmation = st.text_input(
-                "Confirm new password",
+            password2 = st.text_input(
+                "Confirm Password",
                 type="password",
+                placeholder="Repeat your password",
             )
             submitted = st.form_submit_button(
-                "Save New Password",
+                "Set Password & Sign In  →",
                 type="primary",
                 use_container_width=True,
             )
 
         if submitted:
-            validation_error = _password_validation_error(new_password)
-            if not forced and not current_password:
-                st.error("Enter your current password.")
-            elif validation_error:
-                st.error(validation_error)
-            elif new_password != confirmation:
-                st.error("The new passwords do not match.")
-            elif current_password and new_password == current_password:
-                st.error("Your new password must be different from your current password.")
+            if len(password) < 8:
+                st.warning("Password must be at least 8 characters.")
+            elif password != password2:
+                st.warning("Passwords do not match.")
             else:
-                try:
-                    if not forced:
-                        verification = sign_in(get_user_email(), current_password)
-                        if verification.get("error"):
-                            st.error("The current password is incorrect.")
-                            return
-                    update_password(new_password)
-                    confirm_password_changed()
-                    st.session_state.password_change_required = False
-                    st.session_state.dashboard_view = "sessions"
-                    st.success("Your password has been changed.")
+                with st.spinner("Activating your account…"):
+                    result = _verify_token_and_set_password(
+                        token_hash, token_type, password
+                    )
+                if result["error"]:
+                    st.error(result["error"])
+                else:
+                    st.session_state.auth_user = result["user"]
+                    st.query_params.clear()
+                    st.success("Account activated. Welcome to AI Thinking Studio™.")
                     st.rerun()
-                except Exception as exc:
-                    st.error(f"Could not change your password: {exc}")
 
-        if forced:
-            st.markdown("<br>", unsafe_allow_html=True)
-            if st.button("Sign Out", key="forced_password_signout", use_container_width=True):
-                sign_out()
-                clear_supabase_client()
-                st.session_state.auth_user = None
-                st.session_state.password_change_required = None
-                st.rerun()
+
+def _verify_token_and_set_password(token_hash: str, token_type: str,
+                                    new_password: str) -> dict:
+    """
+    Verify the invite token with Supabase and set the user's password.
+    """
+    from core.supabase_client import get_supabase
+    sb = get_supabase()
+
+    try:
+        result = sb.auth.verify_otp({
+            "token_hash": token_hash,
+            "type": token_type,
+        })
+
+        if not result.user:
+            return {"user": None, "error": "Invalid or expired invitation link."}
+
+        update_result = sb.auth.update_user({"password": new_password})
+
+        if not update_result.user:
+            return {"user": None, "error": "Could not set password. Please try again."}
+
+        return {"user": update_result.user, "error": None}
+
+    except Exception as e:
+        msg = str(e)
+        if "expired" in msg.lower() or "invalid" in msg.lower():
+            return {
+                "user": None,
+                "error": (
+                    "This invitation link has expired or already been used. "
+                    "Please contact the workshop facilitator for a new invite."
+                ),
+            }
+        return {"user": None, "error": f"Account activation failed: {msg}"}
 
 
 def render_auth_page():
-    """
-    Render the full authentication page (login or register).
-    Called when the user is not authenticated.
-    """
-    st.markdown(auth_brand_html(), unsafe_allow_html=True)
+    """Render the login page."""
+    st.markdown(
+        """
+        <div style="text-align: center; margin: 60px auto 32px auto;">
+            <div style="font-family: serif; font-size: 1.8rem; color: #A8C4E0;
+                        font-weight: 500; margin-bottom: 4px;">
+                AI Thinking Studio™ Lite
+            </div>
+            <div style="font-size: 0.8rem; color: #3A5A79; letter-spacing: 0.1em;
+                        text-transform: uppercase;">
+                A structured thinking environment
+            </div>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
 
-    # Login form only — accounts are provisioned by the facilitator
     col1, col2, col3 = st.columns([1, 2, 1])
     with col2:
         _render_login_form()
 
-    # Promise reminder
     st.markdown(
-        f"""
+        """
         <div style="text-align: center; margin-top: 48px; padding: 0 24px;">
-            <div style="font-size: 0.78rem; color: #918E86; line-height: 1.8;">
+            <div style="font-size: 0.78rem; color: #2A4A6A; font-style: italic;
+                        line-height: 1.8;">
                 This Studio will not tell you what to think.<br>
-                It is designed to help you examine conclusions more thoroughly before reaching them.
-            </div>
-            <div style="font-family:'EMG Cormorant',serif;font-size:1.25rem;color:#C9A96E;margin-top:18px;">{BRAND_LINE}</div>
-            <div style="font-size:0.68rem;color:#6F6A62;margin-top:18px;">
-                By signing in, you acknowledge that AI supports examination but does not replace your judgment.
+                It is designed to help you examine conclusions more thoroughly
+                before reaching them.
             </div>
         </div>
         """,
@@ -321,7 +200,6 @@ def render_auth_page():
 
 
 def _render_login_form():
-    """Render the sign-in form."""
     st.markdown("<br>", unsafe_allow_html=True)
 
     with st.form("login_form", clear_on_submit=False):
@@ -352,19 +230,15 @@ def _render_login_form():
                 st.error(result["error"])
             else:
                 st.session_state.auth_user = result["user"]
-                st.session_state.password_change_required = None
-                st.session_state.profile_complete = None
-                st.session_state.user_profile = None
                 st.rerun()
 
 
 def render_logout_button():
-    """Render a compact logout button for the sidebar."""
     email = get_user_email()
     st.markdown(
         f"""
-        <div style="padding: 8px 12px; font-size: 0.75rem; color: #7E796F;
-                    border-top: 1px solid #292832; margin-top: 8px;">
+        <div style="padding: 8px 12px; font-size: 0.75rem; color: #3A5A79;
+                    border-top: 1px solid #1A2E45; margin-top: 8px;">
             {email}
         </div>
         """,
@@ -372,14 +246,8 @@ def render_logout_button():
     )
     if st.button("Sign Out", key="sidebar_logout", use_container_width=True):
         sign_out()
-        clear_supabase_client()
         st.session_state.auth_user = None
         st.session_state.auth_expedition_id = None
-        st.session_state.dashboard_view = "sessions"
-        st.session_state.password_change_required = None
-        st.session_state.profile_complete = None
-        st.session_state.user_profile = None
-        # Clear expedition state
         for key in [
             "expedition_setup", "mirror_output", "human_output",
             "possibility_output", "battlefield_output", "future_output",

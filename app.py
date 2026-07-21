@@ -16,10 +16,10 @@ from core.brand import (  # noqa: E402
 
 from core.auth import (  # noqa: E402
     init_auth_state, is_authenticated, get_user_id,
-    is_profile_complete, is_studio_admin, must_change_password,
-    render_auth_page, render_logout_button, render_password_change_page,
-    render_profile_page,
+    render_auth_page, render_logout_button,
+    detect_invite_token, render_set_password_page,
 )
+
 from core.state import (  # noqa: E402
     STEPS, STEP_ICONS, STEP_LABELS,
     init_state, navigate_to, get_expedition_data,
