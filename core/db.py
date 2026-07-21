@@ -208,10 +208,6 @@ def sign_up(email: str, password: str) -> dict:
 
 
 def sign_in(email: str, password: str) -> dict:
-    """
-    Sign in an existing user.
-    Returns {'user': ..., 'session': ..., 'error': None} or {'error': str}
-    """
     sb = get_supabase()
     try:
         result = sb.auth.sign_in_with_password({"email": email, "password": password})
@@ -220,6 +216,12 @@ def sign_in(email: str, password: str) -> dict:
         return {"user": None, "session": None, "error": "Invalid email or password."}
     except Exception as e:
         msg = str(e)
+        if "must_change_password" in msg:
+            return {
+                "user": None,
+                "session": None,
+                "error": "Your password needs to be reset. Please contact the workshop facilitator.",
+            }
         if "Invalid login credentials" in msg:
             msg = "Invalid email or password."
         return {"user": None, "session": None, "error": msg}
