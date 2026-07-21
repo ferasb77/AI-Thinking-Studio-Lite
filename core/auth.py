@@ -146,12 +146,12 @@ def _verify_token_and_set_password(token_hash: str, token_type: str,
         if not update_result or not update_result.user:
             return {"user": None, "error": "Could not set password. Please try again."}
 
-        # Clear the must_change_password flag so the user isn't prompted again.
-        # Pass user_id explicitly — the Supabase client singleton may not yet
-        # carry this user's session token, so the RPC fallback would silently fail.
+        # The invitation password is the user's first permanent password, so
+        # clear the first-login flag immediately after setting it. The RPC uses
+        # the authenticated session established by verify_otp() above.
         try:
             from core.db import confirm_password_changed
-            confirm_password_changed(user_id=str(update_result.user.id))
+            confirm_password_changed()
         except Exception:
             pass  # Non-fatal — user can change password on next login if needed
 
