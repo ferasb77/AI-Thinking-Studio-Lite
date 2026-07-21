@@ -7,7 +7,148 @@ _root = os.path.dirname(os.path.abspath(__file__))
 if _root not in sys.path:
     sys.path.insert(0, _root)
 
-import streamlit as st  # noqa: E402
+import streamlit as st  # ── Auth helpers (app-level) ──────────────────────────────────────────────────
+
+def must_change_password() -> bool:
+    user = st.session_state.get("auth_user")
+    if not user:
+        return False
+    try:
+        state = get_my_password_state(str(user.id))
+        return bool(state.get("must_change_password", False))
+    except Exception:
+        return False
+
+
+def is_profile_complete() -> bool:
+    user = st.session_state.get("auth_user")
+    if not user:
+        return False
+    try:
+        profile = get_my_profile(str(user.id))
+        return bool(profile.get("profile_completed_at"))
+    except Exception:
+        return False
+
+
+def is_studio_admin() -> bool:
+    user = st.session_state.get("auth_user")
+    if not user:
+        return False
+    try:
+        meta = getattr(user, "app_metadata", None) or {}
+        return meta.get("studio_role") == "admin"
+    except Exception:
+        return False
+
+
+def render_password_change_page(forced: bool = False):
+    if forced:
+        st.markdown(
+            """
+            <div style="background:#1A0D0D;border:1px solid #4A2A2A;border-radius:8px;
+                        padding:20px 24px;margin-bottom:24px;">
+                <div style="font-size:0.85rem;color:#E8A0A0;line-height:1.7;">
+                    Before entering AI Thinking Studio, please set a new personal password.
+                    Your account was provisioned with a temporary password that must be replaced.
+                </div>
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
+    else:
+        st.markdown(
+            "<div style=\'font-family:serif;font-size:1.4rem;color:#A8C4E0;margin-bottom:16px;\'>Change Password</div>",
+            unsafe_allow_html=True,
+        )
+
+    with st.form("change_password_form"):
+        new_password     = st.text_input("New Password", type="password",
+                                          placeholder="At least 8 characters")
+        confirm_password = st.text_input("Confirm New Password", type="password",
+                                          placeholder="Repeat your new password")
+        submitted = st.form_submit_button(
+            "Update Password  →", type="primary", use_container_width=True
+        )
+
+    if submitted:
+        if len(new_password) < 8:
+            st.warning("Password must be at least 8 characters.")
+        elif new_password != confirm_password:
+            st.warning("Passwords do not match.")
+        else:
+            try:
+                update_password(new_password)
+                confirm_password_changed()
+                st.success("Password updated. Welcome to AI Thinking Studio.")
+                st.rerun()
+            except Exception as e:
+                st.error(f"Password update failed: {e}")
+
+
+def render_profile_page(forced: bool = False):
+    if forced:
+        st.markdown(
+            """
+            <div style="background:#0D1A0D;border:1px solid #2A4A2A;border-radius:8px;
+                        padding:20px 24px;margin-bottom:24px;">
+                <div style="font-size:0.85rem;color:#7ECFB0;line-height:1.7;">
+                    Please complete your profile before entering the Studio.
+                    This information helps the facilitator support your learning journey.
+                </div>
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
+    else:
+        st.markdown(
+            "<div style=\'font-family:serif;font-size:1.4rem;color:#A8C4E0;margin-bottom:16px;\'>My Profile</div>",
+            unsafe_allow_html=True,
+        )
+
+    user_id = get_user_id()
+    profile = {}
+    try:
+        profile = get_my_profile(user_id)
+    except Exception:
+        pass
+
+    with st.form("profile_form"):
+        full_name    = st.text_input("Full Name",
+                                      value=profile.get("full_name", "") or "",
+                                      placeholder="Your full name")
+        phone_number = st.text_input("Phone Number",
+                                      value=profile.get("phone_number", "") or "",
+                                      placeholder="+9611234567 (include country code)")
+        company_name = st.text_input("Company / Organisation",
+                                      value=profile.get("company_name", "") or "",
+                                      placeholder="Your organisation")
+        submitted = st.form_submit_button(
+            "Save Profile  →", type="primary", use_container_width=True
+        )
+
+    if submitted:
+        if not full_name.strip():
+            st.warning("Please enter your full name.")
+        elif not phone_number.strip():
+            st.warning("Please enter your phone number.")
+        elif not company_name.strip():
+            st.warning("Please enter your company or organisation.")
+        else:
+            try:
+                save_my_profile(user_id, full_name.strip(),
+                                phone_number.strip(), company_name.strip())
+                st.success("Profile saved.")
+                if forced:
+                    st.rerun()
+                else:
+                    st.session_state.dashboard_view = "sessions"
+                    st.rerun()
+            except Exception as e:
+                st.error(f"Could not save profile: {e}")
+
+
+# noqa: E402
 
 from core.brand import (  # noqa: E402
     BRAND_CSS, BRAND_LINE, ENDORSEMENT, PRODUCT_DESCRIPTOR,
@@ -31,6 +172,8 @@ from core.db import (  # noqa: E402
     get_user_expeditions, create_expedition, delete_expedition,
     save_expedition_field, load_expedition_data, mark_expedition_complete,
     update_expedition_title, get_user_session_stats,
+    get_my_password_state, update_password, confirm_password_changed,
+    get_my_profile, save_my_profile,
 )
 from core.prompts import (  # noqa: E402
     build_battlefield_prompt, build_future_prompt, build_human_prompt,
@@ -949,6 +1092,147 @@ def page_summary_export():
             file_name="ai-thinking-studio-examination-prompt-toolkit.pdf",
             mime="application/pdf",
         )
+
+
+# ── Auth helpers (app-level) ──────────────────────────────────────────────────
+
+def must_change_password() -> bool:
+    user = st.session_state.get("auth_user")
+    if not user:
+        return False
+    try:
+        state = get_my_password_state(str(user.id))
+        return bool(state.get("must_change_password", False))
+    except Exception:
+        return False
+
+
+def is_profile_complete() -> bool:
+    user = st.session_state.get("auth_user")
+    if not user:
+        return False
+    try:
+        profile = get_my_profile(str(user.id))
+        return bool(profile.get("profile_completed_at"))
+    except Exception:
+        return False
+
+
+def is_studio_admin() -> bool:
+    user = st.session_state.get("auth_user")
+    if not user:
+        return False
+    try:
+        meta = getattr(user, "app_metadata", None) or {}
+        return meta.get("studio_role") == "admin"
+    except Exception:
+        return False
+
+
+def render_password_change_page(forced: bool = False):
+    if forced:
+        st.markdown(
+            """
+            <div style="background:#1A0D0D;border:1px solid #4A2A2A;border-radius:8px;
+                        padding:20px 24px;margin-bottom:24px;">
+                <div style="font-size:0.85rem;color:#E8A0A0;line-height:1.7;">
+                    Before entering AI Thinking Studio, please set a new personal password.
+                    Your account was provisioned with a temporary password that must be replaced.
+                </div>
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
+    else:
+        st.markdown(
+            "<div style=\'font-family:serif;font-size:1.4rem;color:#A8C4E0;margin-bottom:16px;\'>Change Password</div>",
+            unsafe_allow_html=True,
+        )
+
+    with st.form("change_password_form"):
+        new_password     = st.text_input("New Password", type="password",
+                                          placeholder="At least 8 characters")
+        confirm_password = st.text_input("Confirm New Password", type="password",
+                                          placeholder="Repeat your new password")
+        submitted = st.form_submit_button(
+            "Update Password  →", type="primary", use_container_width=True
+        )
+
+    if submitted:
+        if len(new_password) < 8:
+            st.warning("Password must be at least 8 characters.")
+        elif new_password != confirm_password:
+            st.warning("Passwords do not match.")
+        else:
+            try:
+                update_password(new_password)
+                confirm_password_changed()
+                st.success("Password updated. Welcome to AI Thinking Studio.")
+                st.rerun()
+            except Exception as e:
+                st.error(f"Password update failed: {e}")
+
+
+def render_profile_page(forced: bool = False):
+    if forced:
+        st.markdown(
+            """
+            <div style="background:#0D1A0D;border:1px solid #2A4A2A;border-radius:8px;
+                        padding:20px 24px;margin-bottom:24px;">
+                <div style="font-size:0.85rem;color:#7ECFB0;line-height:1.7;">
+                    Please complete your profile before entering the Studio.
+                    This information helps the facilitator support your learning journey.
+                </div>
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
+    else:
+        st.markdown(
+            "<div style=\'font-family:serif;font-size:1.4rem;color:#A8C4E0;margin-bottom:16px;\'>My Profile</div>",
+            unsafe_allow_html=True,
+        )
+
+    user_id = get_user_id()
+    profile = {}
+    try:
+        profile = get_my_profile(user_id)
+    except Exception:
+        pass
+
+    with st.form("profile_form"):
+        full_name    = st.text_input("Full Name",
+                                      value=profile.get("full_name", "") or "",
+                                      placeholder="Your full name")
+        phone_number = st.text_input("Phone Number",
+                                      value=profile.get("phone_number", "") or "",
+                                      placeholder="+9611234567 (include country code)")
+        company_name = st.text_input("Company / Organisation",
+                                      value=profile.get("company_name", "") or "",
+                                      placeholder="Your organisation")
+        submitted = st.form_submit_button(
+            "Save Profile  →", type="primary", use_container_width=True
+        )
+
+    if submitted:
+        if not full_name.strip():
+            st.warning("Please enter your full name.")
+        elif not phone_number.strip():
+            st.warning("Please enter your phone number.")
+        elif not company_name.strip():
+            st.warning("Please enter your company or organisation.")
+        else:
+            try:
+                save_my_profile(user_id, full_name.strip(),
+                                phone_number.strip(), company_name.strip())
+                st.success("Profile saved.")
+                if forced:
+                    st.rerun()
+                else:
+                    st.session_state.dashboard_view = "sessions"
+                    st.rerun()
+            except Exception as e:
+                st.error(f"Could not save profile: {e}")
 
 
 # ── Router ─────────────────────────────────────────────────────────────────────
