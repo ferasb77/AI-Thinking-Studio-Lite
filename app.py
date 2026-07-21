@@ -79,7 +79,7 @@ def render_password_change_page(forced: bool = False):
         else:
             try:
                 update_password(new_password)
-                confirm_password_changed(user_id=get_user_id())
+                confirm_password_changed()
                 st.success("Password updated. Welcome to AI Thinking Studio.")
                 st.rerun()
             except Exception as e:
@@ -1166,7 +1166,7 @@ def render_password_change_page(forced: bool = False):
         else:
             try:
                 update_password(new_password)
-                confirm_password_changed(user_id=get_user_id())
+                confirm_password_changed()
                 st.success("Password updated. Welcome to AI Thinking Studio.")
                 st.rerun()
             except Exception as e:
