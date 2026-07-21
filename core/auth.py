@@ -127,24 +127,23 @@ def render_set_password_page(token_hash: str, token_type: str):
 
 def _verify_token_and_set_password(token_hash: str, token_type: str,
                                     new_password: str) -> dict:
-    """
-    Verify the invite token with Supabase and set the user's password.
-    """
     from core.supabase_client import get_supabase
     sb = get_supabase()
 
     try:
+        # Exchange the token for a session
         result = sb.auth.verify_otp({
             "token_hash": token_hash,
             "type": token_type,
         })
 
-        if not result.user:
+        if not result or not result.user:
             return {"user": None, "error": "Invalid or expired invitation link."}
 
+        # Set the password now that we have a valid session
         update_result = sb.auth.update_user({"password": new_password})
 
-        if not update_result.user:
+        if not update_result or not update_result.user:
             return {"user": None, "error": "Could not set password. Please try again."}
 
         return {"user": update_result.user, "error": None}
