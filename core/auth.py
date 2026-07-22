@@ -152,7 +152,6 @@ def _verify_token_and_set_password(token_hash: str, token_type: str,
         # verify_otp() above.
         try:
             from core.db import confirm_password_changed
-            confirm_password_changed(sb)
         except Exception:
             pass  # Non-fatal — user can change password on next login if needed
 
