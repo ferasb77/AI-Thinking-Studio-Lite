@@ -393,6 +393,48 @@ SET raw_app_meta_data = COALESCE(raw_app_meta_data, '{}'::JSONB)
     || '{"studio_role":"admin"}'::JSONB
 WHERE email = 'info@enablemygrowth.com';
 
+-- Invited users choose their permanent password while accepting the
+-- invitation, so they must not be required to change it again afterward.
+-- Supabase populates invited_at after the initial auth.users insert, which is
+-- why this requires a separate AFTER UPDATE trigger.
+CREATE OR REPLACE FUNCTION public.handle_user_invited()
+RETURNS TRIGGER
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = ''
+AS $$
+BEGIN
+    UPDATE public.user_security_state
+    SET must_change_password = FALSE
+    WHERE user_id = NEW.id
+      AND must_change_password = TRUE
+      AND password_changed_at IS NULL;
+
+    RETURN NEW;
+END;
+$$;
+
+REVOKE ALL ON FUNCTION public.handle_user_invited() FROM PUBLIC;
+REVOKE ALL ON FUNCTION public.handle_user_invited() FROM anon;
+REVOKE ALL ON FUNCTION public.handle_user_invited() FROM authenticated;
+
+DROP TRIGGER IF EXISTS mark_user_security_state_invited ON auth.users;
+
+CREATE TRIGGER mark_user_security_state_invited
+AFTER UPDATE OF invited_at ON auth.users
+FOR EACH ROW
+WHEN (OLD.invited_at IS NULL AND NEW.invited_at IS NOT NULL)
+EXECUTE FUNCTION public.handle_user_invited();
+
+-- Correct invited accounts created before this trigger existed.
+UPDATE public.user_security_state AS security_state
+SET must_change_password = FALSE
+FROM auth.users AS auth_user
+WHERE auth_user.id = security_state.user_id
+  AND auth_user.invited_at IS NOT NULL
+  AND security_state.must_change_password = TRUE
+  AND security_state.password_changed_at IS NULL;
+
 -- ============================================================
 -- Done. Tables, indexes, RLS policies all created.
 -- ============================================================
